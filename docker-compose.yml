@@ -62,7 +62,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.triplice-frontend.rule=Host(`store.triplice3d.com.br`)"
       - "traefik.http.routers.triplice-frontend.entrypoints=websecure"
-      - "traefik.http.routers.triplice-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.triplice-frontend.tls.certresolver=myresolver"
       - "traefik.http.services.triplice-frontend.loadbalancer.server.port=80"
 
 networks:
