@@ -29,12 +29,12 @@ jobs:
           script: |
             cd /root/apps/triplice_3d_store
             # Create .env file from secrets if needed, or rely on passing env vars
-            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" > .env
-            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-            echo "DEBUG=0" >> .env
-            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
-            echo "STORE_WHATSAPP_NUMBER=${{ secrets.STORE_WHATSAPP_NUMBER }}" >> .env
+            # echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" > .env
+            # echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+            # echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            # echo "DEBUG=0" >> .env
+            # echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+            # echo "STORE_WHATSAPP_NUMBER=${{ secrets.STORE_WHATSAPP_NUMBER }}" >> .env
             
             # Deploy
             docker compose down
