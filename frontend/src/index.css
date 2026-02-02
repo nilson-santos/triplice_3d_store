@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #000000;
+  --color-secondary: #ffffff;
+  --color-accent: #3b82f6;
+}
+
+body {
+  background-color: #f3f4f6;
+  font-family: 'Inter', sans-serif;
+}
