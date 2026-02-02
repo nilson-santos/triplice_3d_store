@@ -12,6 +12,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - back-end
 
   backend:
     build: ./backend
@@ -39,6 +41,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - back-end  
 
   frontend:
     build: ./frontend
@@ -51,6 +55,15 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - front-end
+      - back-end
+
+networks:
+  front-end:
+    external: true
+  back-end:
+    external: true
 
 volumes:
   postgres_data:
