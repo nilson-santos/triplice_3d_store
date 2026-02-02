@@ -1,5 +1,5 @@
 # Stage 1: Build the React application
-FROM node:20-slim as build
+FROM node:25-slim as build
 
 WORKDIR /app
 
@@ -11,6 +11,9 @@ RUN npm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
+
+# Install curl for healthcheck
+RUN apk add --no-cache curl
 
 # Copy built assets from builder stage
 COPY --from=build /app/dist /usr/share/nginx/html
