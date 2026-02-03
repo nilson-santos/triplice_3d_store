@@ -1,6 +1,6 @@
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { CartDrawer } from './CartDrawer';
 import logo from '../assets/logo.png';
@@ -10,7 +10,6 @@ export const Header = () => {
     const { items } = useCart();
     const [isCartOpen, setIsCartOpen] = useState(false);
     const location = useLocation();
-    const navigate = useNavigate();
 
     const handleHomeClick = (e: React.MouseEvent) => {
         if (location.pathname === '/') {
@@ -64,7 +63,7 @@ export const Header = () => {
 
             <AnimatePresence>
                 {isCartOpen && (
-                    <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+                    <CartDrawer onClose={() => setIsCartOpen(false)} />
                 )}
             </AnimatePresence>
         </>

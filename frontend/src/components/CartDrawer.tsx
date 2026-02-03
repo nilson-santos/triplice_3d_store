@@ -3,26 +3,26 @@ import { useCart } from '../context/CartContext';
 import { CheckoutModal } from './CheckoutModal';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 
 interface CartDrawerProps {
-    isOpen: boolean;
     onClose: () => void;
 }
 
-export const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
+export const CartDrawer = ({ onClose }: CartDrawerProps) => {
     const { items, removeFromCart, addToCart, decreaseQuantity, total } = useCart();
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
     // Entrar: Direita para Esquerda (x: 100% -> 0)
     // Sair: Esquerda para Direita (x: 0 -> 100%)
     // Curva logarítmica simulada por cubic-bezier (rápido início, fim suave)
-    const drawerVariants = {
+    const drawerVariants: Variants = {
         hidden: { x: '100%' },
         visible: {
             x: 0,
             transition: {
                 duration: 0.6,
-                ease: [0.22, 1, 0.36, 1] // Quintic/Logarithmic feel
+                ease: [0.22, 1, 0.36, 1]
             }
         },
         exit: {
