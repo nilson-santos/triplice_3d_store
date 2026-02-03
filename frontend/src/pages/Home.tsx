@@ -17,7 +17,7 @@ export const Home = () => {
                     <div className="flex gap-4">
                         <Link
                             to="/catalog"
-                            className="bg-black text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-800 transition"
+                            className="btn-glow-animate text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg"
                         >
                             Ver Catálogo <ArrowRight size={20} />
                         </Link>

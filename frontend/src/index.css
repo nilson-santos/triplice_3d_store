@@ -12,3 +12,26 @@ body {
   background-color: #f3f4f6;
   font-family: 'Inter', sans-serif;
 }
+
+@keyframes shine {
+  0% {
+    background-position: 200% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.btn-glow-animate {
+  background: linear-gradient(90deg, #000000 0%, #797979 50%, #000000 100%);
+  background-size: 200% auto;
+  animation: shine 5s linear infinite;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.btn-glow-animate:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
