@@ -37,7 +37,6 @@ jobs:
             # echo "STORE_WHATSAPP_NUMBER=${{ secrets.STORE_WHATSAPP_NUMBER }}" >> .env
             
             # Deploy
-            docker compose down
             docker compose build --no-cache
             docker compose up -d
             docker image prune -af
