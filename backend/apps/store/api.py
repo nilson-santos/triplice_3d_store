@@ -14,7 +14,7 @@ class CategorySchema(ModelSchema):
 
 class ProductSchema(ModelSchema):
     category: CategorySchema
-    image: str = None  # Handle image URL
+    image: str | None = None  # Handle image URL
 
     class Meta:
         model = Product

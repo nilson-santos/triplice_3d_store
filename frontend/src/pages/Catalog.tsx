@@ -9,8 +9,17 @@ export const Catalog = () => {
 
     useEffect(() => {
         api.get('/products')
-            .then(res => setProducts(res.data))
-            .catch(err => console.error(err))
+            .then(res => {
+                if (Array.isArray(res.data)) {
+                    setProducts(res.data);
+                } else {
+                    console.error('API returned non-array data:', res.data);
+                    setProducts([]);
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching products:', err);
+            })
             .finally(() => setLoading(false));
     }, []);
 
