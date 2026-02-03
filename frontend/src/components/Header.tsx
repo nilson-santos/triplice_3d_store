@@ -1,6 +1,6 @@
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { CartDrawer } from './CartDrawer';
 import logo from '../assets/logo.png';
@@ -9,18 +9,43 @@ import { AnimatePresence } from 'framer-motion';
 export const Header = () => {
     const { items } = useCart();
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleHomeClick = (e: React.MouseEvent) => {
+        if (location.pathname === '/') {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     return (
         <>
             <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
+                    <Link
+                        to="/"
+                        onClick={handleHomeClick}
+                        className="flex items-center gap-2 font-bold text-xl tracking-tight"
+                    >
                         <img src={logo} alt="Triplice 3D" className="h-10 w-auto" />
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-8 font-medium text-gray-600">
-                        <Link to="/" className="hover:text-black transition">Início</Link>
+                        <Link
+                            to="/"
+                            onClick={handleHomeClick}
+                            className="hover:text-black transition"
+                        >
+                            Início
+                        </Link>
                         <Link to="/catalog" className="hover:text-black transition">Catálogo</Link>
+                        <a
+                            href="/#contact"
+                            className="hover:text-black transition"
+                        >
+                            Contato
+                        </a>
                     </nav>
 
                     <button
