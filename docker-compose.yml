@@ -64,6 +64,7 @@ services:
       - back-end
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=front-end"
       - "traefik.http.routers.triplice-frontend.rule=Host(`store.triplice3d.com.br`)"
       - "traefik.http.routers.triplice-frontend.entrypoints=websecure"
       - "traefik.http.routers.triplice-frontend.tls.certresolver=myresolver"
