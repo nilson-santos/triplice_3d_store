@@ -129,7 +129,7 @@ mkdir -p .agent/skills/license-header-adder/resources
 ```
 /*
  * Copyright (c) 2026 YOUR_COMPANY_NAME LLC.
- * All rights reserved.
+ * Todos os direitos reservados.
  * This code is proprietary and confidential.
  */
 ```
