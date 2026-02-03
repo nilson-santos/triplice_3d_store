@@ -23,8 +23,8 @@ services:
     volumes:
       - ./backend:/app
       - media_volume:/app/media
-    ports:
-      - "8000:8000"
+#    ports:
+#      - "8000:8000"
     env_file:
     - .env
     environment:
@@ -47,11 +47,18 @@ services:
     #   start_period: 30s
     networks:
       - back-end
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=front-end"
+      - "traefik.http.routers.triplice-backend.rule=Host(`api.triplice3d.com.br`)"
+      - "traefik.http.routers.triplice-backend.entrypoints=websecure"
+      - "traefik.http.routers.triplice-backend.tls.certresolver=myresolver"
+      - "traefik.http.services.triplice-backend.loadbalancer.server.port=8000"
 
   frontend:
     build: ./frontend
-    ports:
-      - "8088:80"
+#    ports:
+#      - "8088:80"
     depends_on:
       - backend
     # healthcheck:
