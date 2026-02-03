@@ -2,6 +2,8 @@ import type { Product } from '../api';
 import { useCart } from '../context/CartContext';
 import { ShoppingCart, Check } from 'lucide-react';
 
+import { motion } from 'framer-motion';
+
 export const ProductCard = ({ product }: { product: Product }) => {
     const { addToCart, items } = useCart();
     const isInCart = items.some(item => item.id === product.id);
@@ -10,9 +12,14 @@ export const ProductCard = ({ product }: { product: Product }) => {
         <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
             <div className="aspect-square bg-gray-100 relative overflow-hidden">
                 {product.image ? (
-                    <img
+                    <motion.img
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
                         src={product.image}
                         alt={product.name}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                 ) : (
