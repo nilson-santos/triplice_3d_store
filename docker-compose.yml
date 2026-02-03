@@ -17,7 +17,7 @@ services:
 
   backend:
     build: ./backend
-    command: gunicorn --bind 0.0.0.0:8000 core.wsgi:application
+    command: sh -c "python manage.py migrate --no-input && python manage.py collectstatic --no-input && gunicorn --bind 0.0.0.0:8000 core.wsgi:application
     volumes:
       - ./backend:/app
       - media_volume:/app/media
