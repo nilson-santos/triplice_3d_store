@@ -1,4 +1,4 @@
-import { ArrowRight, MessageCircle, Phone, Mail } from 'lucide-react';
+import { ArrowRight, MessageCircle, Phone, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import heroImage from '../assets/hero-image.png';
 
@@ -6,7 +6,7 @@ export const Home = () => {
     return (
         <div className="relative overflow-hidden">
             {/* Hero Section */}
-            <div className="max-w-7xl mx-auto px-4 py-12 sm:py-20 grid md:grid-cols-2 gap-12 items-center">
+            <div className="max-w-7xl mx-auto px-4 pt-4 pb-12 sm:pt-6 sm:pb-20 grid md:grid-cols-2 gap-12 items-center">
                 <div>
                     <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-6">
                         Arte Materializada em <span className="text-gray-500">3 Dimensões.</span>
@@ -44,7 +44,7 @@ export const Home = () => {
 
                     <div className="grid md:grid-cols-3 gap-8">
                         <a
-                            href="https://wa.me/554591080886"
+                            href="https://wa.me/5545991080886"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition flex flex-col items-center text-center group"
@@ -53,7 +53,7 @@ export const Home = () => {
                                 <MessageCircle size={24} />
                             </div>
                             <h3 className="font-bold mb-2">WhatsApp</h3>
-                            <p className="text-gray-600">(45) 9108-0886</p>
+                            <p className="text-gray-600">(45) 99108-0886</p>
                         </a>
 
                         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center group">
@@ -64,13 +64,18 @@ export const Home = () => {
                             <p className="text-gray-600">Seg. a Sex. das 9h às 18h</p>
                         </div>
 
-                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center group">
+                        <a
+                            href="https://www.instagram.com/triplice.3d/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition flex flex-col items-center text-center group"
+                        >
                             <div className="w-12 h-12 bg-gray-100 text-black rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                                <Mail size={24} />
+                                <Instagram size={24} />
                             </div>
-                            <h3 className="font-bold mb-2">E-mail</h3>
-                            <p className="text-gray-600">contato@triplice3d.com</p>
-                        </div>
+                            <h3 className="font-bold mb-2">Instagram</h3>
+                            <p className="text-gray-600">@triplice.3d</p>
+                        </a>
                     </div>
                 </div>
             </div>
