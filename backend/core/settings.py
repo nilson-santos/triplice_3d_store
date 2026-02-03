@@ -146,3 +146,9 @@ STATICFILES_STORAGE = (
 CORS_ALLOWED_ORIGINS = [
     "https://store.triplice3d.com.br",
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://api.triplice3d.com.br",
+]
