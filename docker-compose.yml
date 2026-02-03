@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:17
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data
     env_file:
       - .env
     environment:
@@ -22,7 +22,7 @@ services:
     command: sh -c "python manage.py migrate --no-input && python manage.py collectstatic --no-input && gunicorn --bind 0.0.0.0:8000 core.wsgi:application"
     volumes:
       - ./backend:/app
-      - media_volume:/app/media
+      - ./media:/backend/media
 #    ports:
 #      - "8000:8000"
     env_file:
@@ -83,7 +83,3 @@ networks:
     external: true
   back-end:
     external: true
-
-volumes:
-  postgres_data:
-  media_volume:
