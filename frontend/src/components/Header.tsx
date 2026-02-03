@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { CartDrawer } from './CartDrawer';
 import logo from '../assets/logo.png';
+import { AnimatePresence } from 'framer-motion';
 
 export const Header = () => {
     const { items } = useCart();
@@ -36,7 +37,11 @@ export const Header = () => {
                 </div>
             </header>
 
-            <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+            <AnimatePresence>
+                {isCartOpen && (
+                    <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+                )}
+            </AnimatePresence>
         </>
     );
 };
