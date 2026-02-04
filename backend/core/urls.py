@@ -18,10 +18,10 @@ from django.contrib import admin
 from django.urls import path
 from apps.store.api import api
 
-# Personalização do Admin
-admin.site.site_header = "Loja Tríplice 3D"  # H1 no topo
-admin.site.site_title = "Admin Loja Tríplice 3D"    # Título da aba do navegador
-admin.site.index_title = "Admin Loja Tríplice 3D"   # Título na página principal
+admin.site.site_header = "Loja Tríplice 3D"
+admin.site.site_title = "Admin Loja Tríplice 3D"
+admin.site.index_title = "Admin Loja Tríplice 3D"
+admin.site.site_url = "https://store.triplice3d.com.br/"
 
 urlpatterns = [
     path('admin/', admin.site.urls),
