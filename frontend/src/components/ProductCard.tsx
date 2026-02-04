@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { ShoppingCart, Check } from 'lucide-react';
+import { ShoppingCart, Check, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import type { Product } from '../api';
 
@@ -25,9 +25,10 @@ export const ProductCard = ({ product }: { product: Product }) => {
                                     initial={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
                                     transition={{ duration: 0.4 }}
-                                    className="absolute inset-0 bg-gray-200"
+                                    className="absolute inset-0 bg-gray-200 flex items-center justify-center"
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                                    <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
