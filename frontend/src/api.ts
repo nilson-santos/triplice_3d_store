@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const api = axios.create({
-    baseURL: 'https://api.triplice3d.com.br/api',
+    baseURL: import.meta.env.VITE_API_URL || 'https://api.triplice3d.com.br/api',
     headers: {
         'Content-Type': 'application/json',
     },

@@ -21,7 +21,8 @@ export const Catalog = () => {
     const fetchProducts = useCallback(async (currentOffset: number) => {
         try {
             const res = await api.get(`/products?limit=${ITEMS_PER_PAGE}&offset=${currentOffset}`);
-            const newProducts = res.data;
+            const data = res.data;
+            const newProducts = Array.isArray(data) ? data : data.items;
 
             if (Array.isArray(newProducts)) {
                 setProducts(prev => currentOffset === 0 ? newProducts : [...prev, ...newProducts]);
