@@ -144,6 +144,7 @@ STATICFILES_STORAGE = (
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
     "https://store.triplice3d.com.br",
 ]
 
