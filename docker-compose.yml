@@ -58,8 +58,8 @@ services:
 
   frontend:
     build: ./frontend
-    ports:
-     - "8088:80"
+    # ports:
+    #  - "8088:80"
     depends_on:
       backend:
         condition: service_healthy

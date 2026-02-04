@@ -39,12 +39,12 @@ export const Header = () => {
                             Início
                         </Link>
                         <Link to="/catalog" className="hover:text-black transition">Catálogo</Link>
-                        <a
-                            href="/#contact"
+                        <Link
+                            to="/#contact"
                             className="hover:text-black transition"
                         >
                             Contato
-                        </a>
+                        </Link>
                     </nav>
 
                     <button
