@@ -10,7 +10,7 @@ export const ProductCard = ({ product }: { product: Product }) => {
     const isInCart = items.some(item => item.id === product.id);
     const { ref, inView } = useInView({
         triggerOnce: true,
-        rootMargin: '100px 0px',
+        rootMargin: '600px 0px',
     });
     const [imageLoaded, setImageLoaded] = useState(false);
 

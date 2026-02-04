@@ -16,6 +16,7 @@ export const Catalog = () => {
 
     const { ref, inView } = useInView({
         threshold: 0,
+        rootMargin: '1000px',
     });
 
     const fetchProducts = useCallback(async (currentOffset: number) => {
