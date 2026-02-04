@@ -1,27 +1,32 @@
-import type { Product } from '../api';
-import { useCart } from '../context/CartContext';
-import { ShoppingCart, Check } from 'lucide-react';
-
 import { motion } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
+import { ShoppingCart, Check } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import type { Product } from '../api';
 
 export const ProductCard = ({ product }: { product: Product }) => {
     const { addToCart, items } = useCart();
     const isInCart = items.some(item => item.id === product.id);
+    const { ref, inView } = useInView({
+        triggerOnce: true,
+        rootMargin: '100px 0px',
+    });
 
     return (
-        <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
+        <div ref={ref} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
             <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                {product.image ? (
+                {product.image && inView ? (
                     <motion.img
                         initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        viewport={{ once: true }}
+                        animate={{ opacity: 1 }}
                         transition={{ duration: 0.5 }}
                         src={product.image}
                         alt={product.name}
                         loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
+                ) : product.image ? (
+                    <div className="w-full h-full bg-gray-200 animate-pulse" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                         No Image

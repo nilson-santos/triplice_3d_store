@@ -41,9 +41,12 @@ class OrderResponseSchema(Schema):
     order_number: str
     whatsapp_url: str
 
+from ninja.pagination import paginate
+
 # Endpoints
 
 @api.get("/products", response=List[ProductSchema])
+@paginate
 def list_products(request):
     return Product.objects.filter(is_active=True).select_related('category')
 
