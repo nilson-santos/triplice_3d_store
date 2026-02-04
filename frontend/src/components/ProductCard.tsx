@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { ShoppingCart, Check } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -11,24 +12,44 @@ export const ProductCard = ({ product }: { product: Product }) => {
         triggerOnce: true,
         rootMargin: '100px 0px',
     });
+    const [imageLoaded, setImageLoaded] = useState(false);
 
     return (
         <div ref={ref} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
             <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                {product.image && inView ? (
-                    <motion.img
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5 }}
-                        src={product.image}
-                        alt={product.name}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                ) : product.image ? (
-                    <div className="w-full h-full bg-gray-200 animate-pulse" />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                {product.image && (
+                    <>
+                        <AnimatePresence>
+                            {!imageLoaded && inView && (
+                                <motion.div
+                                    initial={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.4 }}
+                                    className="absolute inset-0 bg-gray-200"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {inView ? (
+                            <motion.img
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: imageLoaded ? 1 : 0 }}
+                                transition={{ duration: 0.5 }}
+                                src={product.image}
+                                alt={product.name}
+                                loading="lazy"
+                                onLoad={() => setImageLoaded(true)}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gray-200" />
+                        )}
+                    </>
+                )}
+                {!product.image && (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
                         No Image
                     </div>
                 )}
