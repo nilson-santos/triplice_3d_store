@@ -20,7 +20,12 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer_name', 'status', 'created_at')
+    def order_display(self, obj):
+        return f"#{obj.order_number}"
+
+    order_display.short_description = "Pedido"
+    
+    list_display = ('order_display', 'customer_name', 'status', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = ('customer_name', 'id')
     inlines = [OrderItemInline]
