@@ -43,12 +43,19 @@ class OrderResponseSchema(Schema):
 
 from ninja.pagination import paginate
 
+@api.get("/categories", response=List[CategorySchema])
+def list_categories(request):
+    return Category.objects.filter(products__is_active=True).distinct()
+
 # Endpoints
 
 @api.get("/products", response=List[ProductSchema])
 @paginate
-def list_products(request):
-    return Product.objects.filter(is_active=True).select_related('category')
+def list_products(request, category_id: int = None):
+    qs = Product.objects.filter(is_active=True).select_related('category')
+    if category_id:
+        qs = qs.filter(category_id=category_id)
+    return qs
 
 @api.get("/products/{product_id}", response=ProductSchema)
 def get_product(request, product_id: int):

@@ -20,6 +20,12 @@ export interface Product {
     };
 }
 
+export interface Category {
+    id: number;
+    name: string;
+    slug: string;
+}
+
 export interface OrderItem {
     product_id: number;
     quantity: number;
@@ -36,3 +42,8 @@ export interface OrderResponse {
     order_number: string;
     whatsapp_url: string;
 }
+
+export const getCategories = async () => {
+    const res = await api.get<Category[]>('/categories');
+    return res.data;
+};

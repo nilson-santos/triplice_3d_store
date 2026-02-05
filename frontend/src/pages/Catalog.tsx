@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { api } from '../api';
-import type { Product } from '../api';
+import { api, getCategories } from '../api';
+import type { Product, Category } from '../api';
 import { ProductCard } from '../components/ProductCard';
 import { ProductSkeleton } from '../components/ProductSkeleton';
 import { useInView } from 'react-intersection-observer';
@@ -14,14 +14,30 @@ export const Catalog = () => {
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
 
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+
     const { ref, inView } = useInView({
         threshold: 0,
         rootMargin: '1000px',
     });
 
-    const fetchProducts = useCallback(async (currentOffset: number) => {
+    const fetchCategories = useCallback(async () => {
         try {
-            const res = await api.get(`/products?limit=${ITEMS_PER_PAGE}&offset=${currentOffset}`);
+            const data = await getCategories();
+            setCategories(data);
+        } catch (err) {
+            console.error('Error fetching categories:', err);
+        }
+    }, []);
+
+    const fetchProducts = useCallback(async (currentOffset: number, categoryId: number | null) => {
+        try {
+            let url = `/products?limit=${ITEMS_PER_PAGE}&offset=${currentOffset}`;
+            if (categoryId) {
+                url += `&category_id=${categoryId}`;
+            }
+            const res = await api.get(url);
             const data = res.data;
             const newProducts = Array.isArray(data) ? data : data.items;
 
@@ -37,10 +53,24 @@ export const Catalog = () => {
         }
     }, []);
 
-    // Initial Load
+    // Initial Load - Categories and Products
     useEffect(() => {
-        fetchProducts(0);
-    }, [fetchProducts]);
+        fetchCategories();
+        // Initial fetch with null category
+        fetchProducts(0, null);
+    }, [fetchCategories, fetchProducts]);
+
+    // Handle Category Change
+    const handleCategorySelect = (categoryId: number | null) => {
+        if (selectedCategory === categoryId) return;
+
+        setSelectedCategory(categoryId);
+        setOffset(0);
+        setProducts([]);
+        setLoading(true);
+        setHasMore(true);
+        fetchProducts(0, categoryId);
+    };
 
     // Load More when in view
     useEffect(() => {
@@ -48,14 +78,15 @@ export const Catalog = () => {
             setLoadingMore(true);
             const nextOffset = offset + ITEMS_PER_PAGE;
             setOffset(nextOffset);
-            fetchProducts(nextOffset);
+            fetchProducts(nextOffset, selectedCategory);
         }
-    }, [inView, hasMore, loading, loadingMore, products.length, offset, fetchProducts]);
+    }, [inView, hasMore, loading, loadingMore, products.length, offset, fetchProducts, selectedCategory]);
 
     if (loading && products.length === 0) {
         return (
             <div className="max-w-7xl mx-auto px-4 py-8">
                 <h1 className="text-3xl font-bold mb-8">Nossos Produtos</h1>
+                {/* Skeleton for categories could go here */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {[...Array(8)].map((_, i) => (
                         <ProductSkeleton key={i} />
@@ -69,9 +100,34 @@ export const Catalog = () => {
         <div className="max-w-7xl mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-8">Nossos Produtos</h1>
 
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-2 mb-8">
+                <button
+                    onClick={() => handleCategorySelect(null)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === null
+                        ? 'bg-black text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                >
+                    Todos
+                </button>
+                {categories.map(category => (
+                    <button
+                        key={category.id}
+                        onClick={() => handleCategorySelect(category.id)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === category.id
+                            ? 'bg-black text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                    >
+                        {category.name}
+                    </button>
+                ))}
+            </div>
+
             {products.length === 0 && !loading ? (
                 <div className="text-center text-gray-500 py-12">
-                    Nenhum produto encontrado. Adicione produtos no Django Admin.
+                    Nenhum produto encontrado nesta categoria.
                 </div>
             ) : (
                 <>
@@ -94,3 +150,4 @@ export const Catalog = () => {
         </div>
     );
 };
+
