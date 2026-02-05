@@ -8,10 +8,15 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price', 'is_active')
-    list_filter = ('category', 'is_active')
+    def display_categories(self, obj):
+        return ", ".join([c.name for c in obj.categories.all()])
+    display_categories.short_description = 'Categorias'
+
+    list_display = ('name', 'display_categories', 'price', 'is_active')
+    list_filter = ('categories', 'is_active')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
+    filter_horizontal = ('categories',)
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem

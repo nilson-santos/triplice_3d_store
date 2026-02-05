@@ -13,11 +13,11 @@ export interface Product {
     description: string;
     price: string;
     image: string | null;
-    category: {
+    categories: Array<{
         id: number;
         name: string;
         slug: string;
-    };
+    }>;
 }
 
 export interface Category {

@@ -13,12 +13,12 @@ class CategorySchema(ModelSchema):
         fields = ['id', 'name', 'slug']
 
 class ProductSchema(ModelSchema):
-    category: CategorySchema
+    categories: List[CategorySchema]
     image: str | None = None  # Handle image URL
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'slug', 'description', 'price', 'is_active', 'image', 'category']
+        fields = ['id', 'name', 'slug', 'description', 'price', 'is_active', 'image', 'categories']
     
     @staticmethod
     def resolve_image(obj, context):
@@ -52,9 +52,9 @@ def list_categories(request):
 @api.get("/products", response=List[ProductSchema])
 @paginate
 def list_products(request, category_id: int = None):
-    qs = Product.objects.filter(is_active=True).select_related('category')
+    qs = Product.objects.filter(is_active=True).prefetch_related('categories')
     if category_id:
-        qs = qs.filter(category_id=category_id)
+        qs = qs.filter(categories__id=category_id)
     return qs
 
 @api.get("/products/{product_id}", response=ProductSchema)
