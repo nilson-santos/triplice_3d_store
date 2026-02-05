@@ -31,7 +31,7 @@ export const ProductCard = ({ product }: { product: Product }) => {
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-gray-300 overflow-hidden">
                                         <motion.div
                                             initial={{ x: '-100%' }}
-                                            animate={{ x: '100%' }}
+                                            animate={{ x: '300%' }}
                                             transition={{
                                                 repeat: Infinity,
                                                 duration: 1.5,
