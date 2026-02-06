@@ -47,3 +47,21 @@ export const getCategories = async () => {
     const res = await api.get<Category[]>('/categories');
     return res.data;
 };
+
+export interface PromotionalPopup {
+    id: number;
+    title: string;
+    image: string | null;
+    link_url: string | null;
+    frequency: 'SESSION' | 'ONCE' | 'PERIOD';
+    period_days: number | null;
+}
+
+export const getActivePromotion = async () => {
+    try {
+        const res = await api.get<PromotionalPopup>('/promotions/active');
+        return res.data;
+    } catch (err) {
+        return null; // Return null if 404
+    }
+};

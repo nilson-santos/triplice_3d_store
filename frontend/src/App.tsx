@@ -5,12 +5,14 @@ import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 import { Catalog } from './pages/Catalog';
 import { ScrollToTop } from './components/ScrollToTop';
+import { PromotionalPopup } from './components/PromotionalPopup';
 
 function App() {
   return (
     <CartProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <PromotionalPopup />
         <div className="min-h-screen bg-white text-black">
           <Header />
           <main>

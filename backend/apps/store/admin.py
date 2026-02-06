@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Order, OrderItem
+from .models import Category, Product, Order, OrderItem, PromotionalPopup
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -35,3 +35,9 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = ('customer_name', 'id')
     inlines = [OrderItemInline]
     readonly_fields = ('id', 'created_at')
+
+@admin.register(PromotionalPopup)
+class PromotionalPopupAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active', 'frequency', 'created_at')
+    list_filter = ('is_active', 'frequency')
+    search_fields = ('title',)

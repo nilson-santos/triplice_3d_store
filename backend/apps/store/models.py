@@ -54,3 +54,21 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity}x {self.product.name}"
+
+class PromotionalPopup(models.Model):
+    FREQUENCY_CHOICES = [
+        ('SESSION', 'Every Session'),
+        ('ONCE', 'Once per User'),
+        ('PERIOD', 'Periodically (every X days)'),
+    ]
+
+    title = models.CharField(max_length=200)
+    image = models.ImageField(upload_to='popups/')
+    link_url = models.URLField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default='ONCE')
+    period_days = models.PositiveIntegerField(null=True, blank=True, help_text="Used if frequency is Periodically")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title

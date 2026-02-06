@@ -106,3 +106,31 @@ def create_order(request, payload: OrderCreateSchema):
         "order_number": order.order_number,
         "whatsapp_url": whatsapp_url
     }
+
+from .models import PromotionalPopup
+
+class PromotionalPopupSchema(ModelSchema):
+    image: str | None = None
+
+    class Meta:
+        model = PromotionalPopup
+        fields = ['id', 'title', 'image', 'link_url', 'frequency', 'period_days']
+
+    @staticmethod
+    def resolve_image(obj, context):
+        request = context.get('request')
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+
+@api.get("/promotions/active", response=PromotionalPopupSchema)
+def get_active_promotion(request):
+    """
+    Returns the most recently created active promotion.
+    """
+    promo = PromotionalPopup.objects.filter(is_active=True).order_by('-created_at').first()
+    if not promo:
+        return 404, {"message": "No active promotion found"} # Ninja handles int vs json returns slightly differently depending on config, but returning None for 204 or just 404 is standard. 
+        # Actually standard Ninja pattern for single object is returning the object or raising 404. 
+        # But if we want to handle "no content" gracefully in frontend without error:
+    return promo
