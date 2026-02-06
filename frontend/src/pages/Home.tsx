@@ -58,7 +58,7 @@ export const Home = () => {
                         </a>
 
                         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center group">
-                            <div className="w-12 h-12 bg-gray-100 text-black rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                            <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
                                 <Phone size={24} />
                             </div>
                             <h3 className="font-bold mb-2">Atendimento</h3>
@@ -71,7 +71,7 @@ export const Home = () => {
                             rel="noopener noreferrer"
                             className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition flex flex-col items-center text-center group"
                         >
-                            <div className="w-12 h-12 bg-gray-100 text-black rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                            <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
                                 <Instagram size={24} />
                             </div>
                             <h3 className="font-bold mb-2">Instagram</h3>
