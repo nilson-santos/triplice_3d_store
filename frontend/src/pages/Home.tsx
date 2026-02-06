@@ -74,7 +74,7 @@ export const Home = () => {
                         </div>
 
                         <a
-                            href="https://www.instagram.com/triplice.3d/"
+                            href="https://instagram.com/triplice.3d/"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition flex flex-col items-center text-center group"
