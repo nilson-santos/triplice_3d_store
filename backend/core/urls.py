@@ -21,7 +21,7 @@ from apps.store.api import api
 admin.site.site_header = "Loja Tríplice 3D"
 admin.site.site_title = "Admin Loja Tríplice 3D"
 admin.site.index_title = "Admin Loja Tríplice 3D"
-admin.site.site_url = "https://store.triplice3d.com.br/"
+admin.site.site_url = "https://triplice3d.com.br/"
 
 urlpatterns = [
     path('admin/', admin.site.urls),
