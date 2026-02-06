@@ -16,6 +16,14 @@ export const Home = () => {
                         Decoração exclusiva, impressa sob demanda com precisão e design paramétrico. Transforme seu ambiente.
                     </p>
                     <div className="flex gap-4">
+                        <a
+                            href="https://wa.me/5545991080886"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white text-gray-900 border border-gray-200 px-8 py-4 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl"
+                        >
+                            WhatsApp <SiWhatsapp size={20} />
+                        </a>
                         <Link
                             to="/catalog"
                             className="btn-glow-animate text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg"
