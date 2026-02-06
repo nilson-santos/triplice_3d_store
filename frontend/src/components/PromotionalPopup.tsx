@@ -86,43 +86,40 @@ export function PromotionalPopup() {
                         initial={{ scale: 0.9, opacity: 0, y: 20 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                        className="relative bg-white rounded-lg shadow-2xl max-w-lg w-full overflow-hidden"
+                        className="relative max-w-lg w-full overflow-hidden flex flex-col items-center justify-center p-4"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
                             onClick={handleClose}
-                            className="absolute top-2 right-2 p-1 bg-white/80 rounded-full hover:bg-white text-gray-800 transition-colors z-10"
+                            className="absolute top-2 right-2 p-2 bg-gray-500/50 rounded-full text-white transition-colors z-20 backdrop-blur-sm"
                             aria-label="Close"
                         >
-                            <X size={20} />
+                            <X size={32} />
                         </button>
 
                         {promo.image && (
-                            <div className="relative group">
+                            <div className="relative group w-full">
                                 {promo.link_url ? (
                                     <a href={promo.link_url} className="block relative">
                                         <img
                                             src={promo.image}
                                             alt={promo.title}
-                                            className="w-full h-auto object-contain max-h-[80vh]"
+                                            className="w-full h-auto object-contain max-h-[85vh] rounded-lg"
                                         />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/10 transition-colors">
-                                            <span className="sr-only">Go to promotion</span>
-                                        </div>
+                                        <span className="sr-only">Go to promotion</span>
                                     </a>
                                 ) : (
                                     <img
                                         src={promo.image}
                                         alt={promo.title}
-                                        className="w-full h-auto object-contain max-h-[80vh]"
+                                        className="w-full h-auto object-contain max-h-[85vh] rounded-lg"
                                     />
                                 )}
                             </div>
                         )}
 
-                        {/* Optional: Layout for title if no image or text only, but assuming image primary */}
                         {!promo.image && (
-                            <div className="p-8 text-center">
+                            <div className="bg-white p-8 text-center rounded-lg shadow-2xl">
                                 <h2 className="text-2xl font-bold mb-4">{promo.title}</h2>
                                 {promo.link_url && (
                                     <a href={promo.link_url} className="inline-flex items-center text-blue-600 hover:underline">
