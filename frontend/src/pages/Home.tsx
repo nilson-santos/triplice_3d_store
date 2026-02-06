@@ -1,4 +1,5 @@
-import { ArrowRight, MessageCircle, Phone, Instagram } from 'lucide-react';
+import { ArrowRight, Phone, Instagram } from 'lucide-react';
+import { SiWhatsapp } from 'react-icons/si';
 import { Link } from 'react-router-dom';
 import heroImage from '../assets/hero-image.png';
 
@@ -50,7 +51,7 @@ export const Home = () => {
                             className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition flex flex-col items-center text-center group"
                         >
                             <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                                <MessageCircle size={24} />
+                                <SiWhatsapp size={24} />
                             </div>
                             <h3 className="font-bold mb-2">WhatsApp</h3>
                             <p className="text-gray-600">(45) 99108-0886</p>
