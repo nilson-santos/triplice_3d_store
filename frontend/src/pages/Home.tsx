@@ -103,9 +103,9 @@ export const Home = () => {
     }, [inView, hasMore, loading, loadingMore, products.length, offset, fetchProducts, selectedCategory, searchQuery, ordering]);
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto px-4 pb-6">
             {/* Banner Carousel */}
-            <section className="mb-8">
+            <section className="mb-6 -mx-4">
                 <BannerCarousel />
             </section>
 
