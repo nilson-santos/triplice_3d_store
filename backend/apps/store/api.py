@@ -1,7 +1,7 @@
 from typing import List
 from ninja import NinjaAPI, Schema, ModelSchema
 from django.shortcuts import get_object_or_404
-from .models import Product, Order, OrderItem, Category
+from .models import Product, Order, OrderItem, Category, Banner
 from uuid import UUID
 
 api = NinjaAPI()
@@ -10,7 +10,7 @@ api = NinjaAPI()
 class CategorySchema(ModelSchema):
     class Meta:
         model = Category
-        fields = ['id', 'name', 'slug']
+        fields = ['id', 'name', 'slug', 'is_default']
 
 class ProductSchema(ModelSchema):
     categories: List[CategorySchema]
@@ -41,6 +41,20 @@ class OrderResponseSchema(Schema):
     order_number: str
     whatsapp_url: str
 
+class BannerSchema(ModelSchema):
+    image: str | None = None
+
+    class Meta:
+        model = Banner
+        fields = ['id', 'title', 'image', 'link_url']
+
+    @staticmethod
+    def resolve_image(obj, context):
+        request = context.get('request')
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+
 from ninja.pagination import paginate
 
 @api.get("/categories", response=List[CategorySchema])
@@ -51,15 +65,32 @@ def list_categories(request):
 
 @api.get("/products", response=List[ProductSchema])
 @paginate
-def list_products(request, category_id: int = None):
+def list_products(request, category_id: int = None, search: str = None, ordering: str = None):
     qs = Product.objects.filter(is_active=True).prefetch_related('categories')
     if category_id:
         qs = qs.filter(categories__id=category_id)
+    if search:
+        qs = qs.filter(name__icontains=search)
+
+    ordering_map = {
+        'price_asc': 'price',
+        'price_desc': '-price',
+        'name_asc': 'name',
+        'name_desc': '-name',
+        'newest': '-created_at',
+    }
+    if ordering and ordering in ordering_map:
+        qs = qs.order_by(ordering_map[ordering])
+
     return qs
 
 @api.get("/products/{product_id}", response=ProductSchema)
 def get_product(request, product_id: int):
     return get_object_or_404(Product, id=product_id)
+
+@api.get("/banners", response=List[BannerSchema])
+def list_banners(request):
+    return Banner.objects.filter(is_active=True)
 
 @api.post("/orders", response=OrderResponseSchema)
 def create_order(request, payload: OrderCreateSchema):
@@ -86,7 +117,6 @@ def create_order(request, payload: OrderCreateSchema):
         items_text.append(f"{item.quantity}x {product.name}")
 
     # Generate WhatsApp Link
-    # Message: "Olá! Gostaria de finalizar o Pedido #{order_number}. \nItens: ... \nTotal: R$..."
     nl = "%0A" # url encoded newline
     message = f"Olá! Gostaria de finalizar o *Pedido #{order.order_number}* de {order.customer_name}.{nl}{nl}*Itens:*{nl}"
     for it in items_text:
@@ -94,9 +124,6 @@ def create_order(request, payload: OrderCreateSchema):
     
     message += f"{nl}*Total Estimado:* R$ {total_price:.2f}"
     
-    # Assuming user's phone number or a fixed store number. 
-    # Usually this goes to the STORE'S number.
-    # I'll use a placeholder STORE_NUMBER for now.
     import os
     store_number = os.environ.get('STORE_WHATSAPP_NUMBER', '5511999999999')
     whatsapp_url = f"https://wa.me/{store_number}?text={message}"
@@ -130,7 +157,6 @@ def get_active_promotion(request):
     """
     promo = PromotionalPopup.objects.filter(is_active=True).order_by('-created_at').first()
     if not promo:
-        return 404, {"message": "No active promotion found"} # Ninja handles int vs json returns slightly differently depending on config, but returning None for 204 or just 404 is standard. 
-        # Actually standard Ninja pattern for single object is returning the object or raising 404. 
-        # But if we want to handle "no content" gracefully in frontend without error:
+        return 404, {"message": "No active promotion found"}
     return promo
+

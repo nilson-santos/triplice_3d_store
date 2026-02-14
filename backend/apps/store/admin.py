@@ -1,9 +1,10 @@
 from django.contrib import admin
-from .models import Category, Product, Order, OrderItem, PromotionalPopup
+from .models import Category, Product, Order, OrderItem, PromotionalPopup, Banner
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
+    list_display = ('name', 'slug', 'is_default')
+    list_editable = ('is_default',)
     prepopulated_fields = {'slug': ('name',)}
 
 @admin.register(Product)
@@ -40,4 +41,11 @@ class OrderAdmin(admin.ModelAdmin):
 class PromotionalPopupAdmin(admin.ModelAdmin):
     list_display = ('title', 'is_active', 'frequency', 'created_at')
     list_filter = ('is_active', 'frequency')
+    search_fields = ('title',)
+
+@admin.register(Banner)
+class BannerAdmin(admin.ModelAdmin):
+    list_display = ('title', 'order', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    list_editable = ('order', 'is_active')
     search_fields = ('title',)

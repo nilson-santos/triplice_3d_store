@@ -24,6 +24,7 @@ export interface Category {
     id: number;
     name: string;
     slug: string;
+    is_default: boolean;
 }
 
 export interface OrderItem {
@@ -65,3 +66,16 @@ export const getActivePromotion = async () => {
         return null; // Return null if 404
     }
 };
+
+export interface Banner {
+    id: number;
+    title: string;
+    image: string | null;
+    link_url: string | null;
+}
+
+export const getBanners = async (): Promise<Banner[]> => {
+    const res = await api.get<Banner[]>('/banners');
+    return res.data;
+};
+

@@ -4,6 +4,7 @@ import uuid
 class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
+    is_default = models.BooleanField(default=False, help_text="If checked, this category will be pre-selected on the storefront")
 
     def __str__(self):
         return self.name
@@ -69,6 +70,21 @@ class PromotionalPopup(models.Model):
     frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default='ONCE')
     period_days = models.PositiveIntegerField(null=True, blank=True, help_text="Used if frequency is Periodically")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+class Banner(models.Model):
+    title = models.CharField(max_length=200)
+    image = models.ImageField(upload_to='banners/')
+    link_url = models.URLField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
 
     def __str__(self):
         return self.title

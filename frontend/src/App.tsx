@@ -3,9 +3,9 @@ import { CartProvider } from './context/CartContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
-import { Catalog } from './pages/Catalog';
 import { ScrollToTop } from './components/ScrollToTop';
 import { PromotionalPopup } from './components/PromotionalPopup';
+import { WhatsAppFAB } from './components/WhatsAppFAB';
 
 function App() {
   return (
@@ -18,10 +18,10 @@ function App() {
           <main>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/catalog" element={<Catalog />} />
             </Routes>
           </main>
           <Footer />
+          <WhatsAppFAB />
         </div>
       </BrowserRouter>
     </CartProvider>
@@ -29,3 +29,4 @@ function App() {
 }
 
 export default App;
+
