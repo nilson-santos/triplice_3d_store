@@ -110,7 +110,7 @@ export const Home = () => {
             </section>
 
             {/* Ordering + Search indicator */}
-            <section className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <section className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
                 {/* Search active indicator */}
                 {searchQuery ? (
                     <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -124,7 +124,7 @@ export const Home = () => {
                 )}
 
                 {/* Ordering Select */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 ml-auto">
                     <SlidersHorizontal size={16} className="text-gray-500" />
                     <select
                         value={ordering}
