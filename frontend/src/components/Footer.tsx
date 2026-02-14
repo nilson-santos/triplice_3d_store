@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 export const Footer = () => {
     return (
         <footer className="bg-white border-t border-gray-100 mt-auto">
-            <div className="max-w-7xl mx-auto px-4 py-12">
+            <div className="max-w-7xl mx-auto px-4 pt-12 pb-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     {/* Column 1: Institucional */}
                     <div>
@@ -72,7 +72,7 @@ export const Footer = () => {
                     </div>
                 </div>
 
-                <div className="pt-8 border-t border-gray-100 text-center text-gray-500 text-sm">
+                <div className="pb-1 pt-8 border-t border-gray-100 text-center text-gray-500 text-sm">
                     <p>
                         Copyright &copy; {new Date().getFullYear()} Todos os direitos reservados | <a href="https://api.triplice3d.com.br/admin" className="hover:text-black transition-colors">Tríplice 3D</a>
                     </p>
