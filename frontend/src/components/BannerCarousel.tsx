@@ -81,7 +81,7 @@ export const BannerCarousel = () => {
 
     if (banner.link_url) {
         return (
-            <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="block">
+            <a href={banner.link_url} target="_self" rel="noopener noreferrer" className="block">
                 {content}
             </a>
         );
