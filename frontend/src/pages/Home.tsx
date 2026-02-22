@@ -16,8 +16,7 @@ type OrderingOption = {
 };
 
 const ORDERING_OPTIONS: OrderingOption[] = [
-    { value: '', label: 'Mais Vendidos' },
-    { value: 'newest', label: 'Mais recentes' },
+    { value: '', label: 'Mais recentes' },
     { value: 'price_asc', label: 'Menor preço' },
     { value: 'price_desc', label: 'Maior preço' },
     { value: 'name_asc', label: 'A - Z' },
