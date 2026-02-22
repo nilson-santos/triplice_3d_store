@@ -81,6 +81,8 @@ def list_products(request, category_id: int = None, search: str = None, ordering
     }
     if ordering and ordering in ordering_map:
         qs = qs.order_by(ordering_map[ordering])
+    else:
+        qs = qs.order_by('-created_at')
 
     return qs
 
