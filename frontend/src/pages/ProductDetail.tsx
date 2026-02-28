@@ -153,28 +153,28 @@ export const ProductDetail = () => {
                 <div className="w-full md:w-1/2 flex flex-col md:aspect-square">
                     {/* Desktop Title (Hidden on mobile) */}
                     <div className="hidden md:flex flex-col">
-                        <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight leading-tight">
+                        <h1 className="text-3xl lg:text-3xl font-bold text-gray-900 tracking-tight leading-tight">
                             {product.name}
                         </h1>
                     </div>
 
-                    <div className="mt-1 md:mt-2 text-2xl md:text-3xl font-bold text-black border-b border-gray-100 pb-4 md:pb-6">
+                    <div className="mt-1 md:mt-2 text-2xl md:text-2xl font-bold text-black border-b border-gray-100 pb-4 md:pb-4">
                         R$ {product.price}
                     </div>
 
                     {/* Color Selector */}
                     {product.has_colors && globalColors.length > 0 && (
-                        <div className="mt-6">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <div className="mt-6 md:mt-4">
+                            <h3 className="text-sm font-semibold text-gray-900 mb-3 md:mb-2 flex items-center gap-2">
                                 <PaintBucket size={16} /> Cores / Texturas
                             </h3>
-                            <div className="flex flex-wrap gap-3">
+                            <div className="flex flex-wrap gap-3 md:gap-2">
                                 {globalColors.map(color => (
                                     <button
                                         key={color.id}
                                         onClick={() => setSelectedColor(color.id)}
-                                        className={`group relative w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden transition-all duration-300 ${selectedColor === color.id
-                                            ? 'ring-2 ring-black ring-offset-4 scale-110'
+                                        className={`group relative w-8 h-8 md:w-8 md:h-8 rounded-full overflow-hidden transition-all duration-300 ${selectedColor === color.id
+                                            ? 'ring-2 ring-black ring-offset-4 scale-110 md:ring-offset-2'
                                             : 'ring-1 ring-gray-200 hover:scale-110'
                                             }`}
                                         title={color.name}
@@ -195,19 +195,19 @@ export const ProductDetail = () => {
                         </div>
                     )}
 
-                    <div className="mt-auto pt-8 flex gap-3 w-full">
+                    <div className="mt-auto pt-8 md:pt-4 flex gap-3 md:gap-2 w-full">
                         {!isInCart && (
-                            <div className="flex items-center justify-between border border-gray-200 rounded-2xl px-2 sm:px-4 py-3 sm:py-0 w-[45%] sm:w-1/3 shrink-0">
+                            <div className="flex items-center justify-between border border-gray-200 rounded-2xl md:rounded-xl px-2 sm:px-4 py-3 sm:py-0 md:py-2 w-[45%] sm:w-1/3 shrink-0">
                                 <button
                                     onClick={() => handleQuantityChange(-1)}
-                                    className="text-gray-500 hover:text-black font-semibold text-lg px-2"
+                                    className="text-gray-500 hover:text-black font-semibold text-lg md:text-base px-2"
                                 >
                                     -
                                 </button>
-                                <span className="font-semibold text-lg">{quantity}</span>
+                                <span className="font-semibold text-lg md:text-base">{quantity}</span>
                                 <button
                                     onClick={() => handleQuantityChange(1)}
-                                    className="text-gray-500 hover:text-black font-semibold text-lg px-2"
+                                    className="text-gray-500 hover:text-black font-semibold text-lg md:text-base px-2"
                                 >
                                     +
                                 </button>
@@ -216,18 +216,18 @@ export const ProductDetail = () => {
                         <button
                             onClick={handleAddToCart}
                             disabled={isInCart}
-                            className={`flex-1 py-3 sm:py-4 px-2 sm:px-6 rounded-2xl flex items-center justify-center gap-2 text-[13px] sm:text-lg font-semibold transition-all duration-300 ${isInCart
+                            className={`flex-1 py-3 sm:py-4 md:py-3 px-2 sm:px-6 md:px-4 rounded-2xl md:rounded-xl flex items-center justify-center gap-2 text-[13px] sm:text-lg md:text-sm font-semibold transition-all duration-300 ${isInCart
                                 ? 'bg-green-500 text-white cursor-default'
                                 : 'bg-black text-white hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98]'
                                 }`}
                         >
                             {isInCart ? (
                                 <>
-                                    <Check size={20} className="sm:w-6 sm:h-6" /> <span className="hidden sm:inline">Adicionado ao Carrinho</span><span className="sm:hidden">Adicionado</span>
+                                    <Check size={20} className="sm:w-6 sm:h-6 md:w-5 md:h-5" /> <span className="hidden sm:inline">Adicionado ao Carrinho</span><span className="sm:hidden">Adicionado</span>
                                 </>
                             ) : (
                                 <>
-                                    <ShoppingCart size={20} className="sm:w-6 sm:h-6" /> Comprar
+                                    <ShoppingCart size={20} className="sm:w-6 sm:h-6 md:w-5 md:h-5" /> Comprar
                                 </>
                             )}
                         </button>
@@ -236,8 +236,8 @@ export const ProductDetail = () => {
             </div>
 
             {/* Description Section (Full Width Below) */}
-            <div className="mt-16 border-t border-gray-100 pt-16">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Descrição do Produto</h2>
+            <div className="mt-6 border-t border-gray-100 pt-6">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Descrição do Produto</h2>
                 <div className="prose prose-gray max-w-none text-gray-600 leading-relaxed">
                     <p>{product.description || "Este produto não possui descrição detalhada."}</p>
                 </div>
