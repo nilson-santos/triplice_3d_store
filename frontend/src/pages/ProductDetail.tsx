@@ -103,7 +103,7 @@ export const ProductDetail = () => {
                 <ChevronLeft size={16} className="mr-1" /> Voltar
             </button>
 
-            <div className="flex flex-col md:flex-row gap-4 md:gap-8 lg:gap-12">
+            <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-8 lg:gap-12">
                 {/* Mobile Title (Hidden on md and up) */}
                 <div className="md:hidden flex flex-col mb-1">
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-snug">
@@ -150,7 +150,7 @@ export const ProductDetail = () => {
                 </div>
 
                 {/* Details Section */}
-                <div className="w-full md:w-1/2 flex flex-col">
+                <div className="w-full md:w-1/2 flex flex-col md:aspect-square">
                     {/* Desktop Title (Hidden on mobile) */}
                     <div className="hidden md:flex flex-col">
                         <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight leading-tight">
