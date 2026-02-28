@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Order, OrderItem, PromotionalPopup, Banner
+from .models import Category, Product, Order, OrderItem, PromotionalPopup, Banner, Color, ProductImage
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -7,17 +7,27 @@ class CategoryAdmin(admin.ModelAdmin):
     list_editable = ('is_default',)
     prepopulated_fields = {'slug': ('name',)}
 
+@admin.register(Color)
+class ColorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'image')
+    search_fields = ('name',)
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     def display_categories(self, obj):
         return ", ".join([c.name for c in obj.categories.all()])
     display_categories.short_description = 'Categorias'
 
-    list_display = ('name', 'display_categories', 'price', 'is_active')
-    list_filter = ('categories', 'is_active')
+    list_display = ('name', 'display_categories', 'price', 'has_colors', 'is_active')
+    list_filter = ('categories', 'is_active', 'has_colors')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
     filter_horizontal = ('categories',)
+    inlines = [ProductImageInline]
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 import uuid
 
 class Category(models.Model):
@@ -9,18 +10,48 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-class Product(models.Model):
-    categories = models.ManyToManyField(Category, related_name='products')
-    name = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True)
-    description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='products/', blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+class Color(models.Model):
+    name = models.CharField("Nome da Cor/Textura", max_length=50)
+    image = models.ImageField("Imagem da Textura/Cor", upload_to='colors/', null=True, blank=True)
 
     def __str__(self):
         return self.name
+
+class Product(models.Model):
+    name = models.CharField("Nome do Produto", max_length=200)
+    slug = models.SlugField("Slug", max_length=200, unique=True, blank=True)
+    description = models.TextField("Descrição", blank=True)
+    price = models.DecimalField("Preço", max_digits=10, decimal_places=2)
+    is_active = models.BooleanField("Ativo", default=True)
+    image = models.ImageField("Imagem Principal", upload_to='products/', null=True, blank=True)
+    categories = models.ManyToManyField(Category, related_name='products', verbose_name="Categorias")
+    has_colors = models.BooleanField("Requer Cores", default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Produto"
+        verbose_name_plural = "Produtos"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='products/gallery/')
+    order = models.PositiveIntegerField(default=0, help_text="Order in the gallery")
+    
+    class Meta:
+        ordering = ['order', 'id']
+        
+    def __str__(self):
+        return f"Image for {self.product.name}"
 
 import random
 

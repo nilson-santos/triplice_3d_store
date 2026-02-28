@@ -3,6 +3,7 @@ import { CartProvider } from './context/CartContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
+import { ProductDetail } from './pages/ProductDetail';
 import { ScrollToTop } from './components/ScrollToTop';
 import { PromotionalPopup } from './components/PromotionalPopup';
 import { WhatsAppFAB } from './components/WhatsAppFAB';
@@ -18,6 +19,7 @@ function App() {
           <main>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/produto/:slug" element={<ProductDetail />} />
             </Routes>
           </main>
           <Footer />

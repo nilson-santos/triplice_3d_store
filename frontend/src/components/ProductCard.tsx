@@ -1,13 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { ShoppingCart, Check } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import { ShoppingCart } from 'lucide-react';
 import type { Product } from '../api';
 
 export const ProductCard = ({ product }: { product: Product }) => {
-    const { addToCart, items } = useCart();
-    const isInCart = items.some(item => item.id === product.id);
+    const navigate = useNavigate();
     const { ref, inView } = useInView({
         triggerOnce: true,
         rootMargin: '600px 0px',
@@ -16,7 +15,10 @@ export const ProductCard = ({ product }: { product: Product }) => {
 
     return (
         <div ref={ref} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
-            <div className="aspect-square bg-gray-100 relative overflow-hidden">
+            <div
+                className="aspect-square bg-gray-100 relative overflow-hidden cursor-pointer"
+                onClick={() => navigate(`/produto/${product.slug}`)}
+            >
                 {product.image && (
                     <>
                         <AnimatePresence>
@@ -72,7 +74,12 @@ export const ProductCard = ({ product }: { product: Product }) => {
                 )}
             </div>
             <div className="p-3">
-                <h3 className="font-semibold text-sm sm:text-base text-gray-900 line-clamp-1">{product.name}</h3>
+                <h3
+                    className="font-semibold text-sm sm:text-base text-gray-900 line-clamp-1 cursor-pointer hover:underline"
+                    onClick={() => navigate(`/produto/${product.slug}`)}
+                >
+                    {product.name}
+                </h3>
                 <p className="text-gray-500 text-xs sm:text-sm mt-1 line-clamp-2">{product.description}</p>
                 <div className="flex flex-wrap gap-1 mt-2">
                     {product.categories.map(cat => (
@@ -84,14 +91,11 @@ export const ProductCard = ({ product }: { product: Product }) => {
                 <div className="mt-3 sm:mt-4 flex items-center justify-between">
                     <span className="text-base sm:text-lg font-bold">R$ {product.price}</span>
                     <button
-                        onClick={() => !isInCart && addToCart(product)}
-                        disabled={isInCart}
-                        className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 ${isInCart
-                            ? 'bg-green-500 text-white cursor-default scale-110'
-                            : 'bg-black text-white hover:bg-gray-800'
-                            }`}
+                        onClick={() => navigate(`/produto/${product.slug}`)}
+                        className="p-1.5 sm:p-2 bg-black text-white hover:bg-gray-800 rounded-full transition-all duration-300 hover:scale-105 active:scale-95"
+                        title="Ver Opções"
                     >
-                        {isInCart ? <Check size={16} className="sm:w-5 sm:h-5" /> : <ShoppingCart size={16} className="sm:w-5 sm:h-5" />}
+                        <ShoppingCart size={16} className="sm:w-5 sm:h-5" />
                     </button>
                 </div>
             </div>

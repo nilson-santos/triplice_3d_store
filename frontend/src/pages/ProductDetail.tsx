@@ -1,0 +1,245 @@
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ShoppingCart, Check, PaintBucket } from 'lucide-react';
+import { api, getColors } from '../api';
+import type { Product, Color } from '../api';
+import { useCart } from '../context/CartContext';
+
+export const ProductDetail = () => {
+    const { slug } = useParams();
+    const navigate = useNavigate();
+    const { addToCart, items } = useCart();
+
+    // We will still track if it's in the cart. 
+    // Ideally cart items would also track selected color, but for simplicity we keep the existing CartItem shape for now.
+    const [product, setProduct] = useState<Product | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [mainImage, setMainImage] = useState<string | null>(null);
+    const [selectedColor, setSelectedColor] = useState<number | null>(null);
+    const [quantity, setQuantity] = useState(1);
+
+    // Global colors
+    const [globalColors, setGlobalColors] = useState<Color[]>([]);
+
+    const isInCart = product ? items.some(item => item.id === product.id) : false;
+
+    useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                const res = await api.get(`/products/${slug}`);
+                setProduct(res.data);
+                setMainImage(res.data.image);
+
+                // Fetch colors if product requires colors
+                if (res.data.has_colors) {
+                    const colorsRes = await getColors();
+                    setGlobalColors(colorsRes);
+                    if (colorsRes.length > 0) {
+                        setSelectedColor(colorsRes[0].id);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching product", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProduct();
+    }, [slug]);
+
+    const handleAddToCart = () => {
+        if (product && !isInCart) {
+            // Ideally attach selectedColor info to the item in a real app
+            addToCart(product, quantity);
+        }
+    };
+
+    const handleQuantityChange = (delta: number) => {
+        setQuantity(prev => {
+            const next = prev + delta;
+            return next > 0 ? next : 1;
+        });
+    };
+
+    if (loading) {
+        return (
+            <div className="max-w-7xl mx-auto px-4 py-12 animate-pulse flex flex-col md:flex-row gap-8">
+                <div className="w-full md:w-1/2 aspect-square bg-gray-200 rounded-2xl"></div>
+                <div className="w-full md:w-1/2 space-y-4">
+                    <div className="h-10 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-32 bg-gray-200 rounded w-full mt-8"></div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!product) {
+        return (
+            <div className="text-center py-20">
+                <p className="text-gray-500">Produto não encontrado.</p>
+                <button onClick={() => navigate('/')} className="mt-4 text-black underline">Voltar à loja</button>
+            </div>
+        );
+    }
+
+    // Build gallery logic: Main Image + array of secondary images
+    // If no images from DB array, fallback to main image only
+    const galleryItems = [];
+    if (product.image) galleryItems.push(product.image);
+    if (product.images) {
+        product.images.sort((a, b) => a.order - b.order).forEach(img => {
+            if (img.image_url) galleryItems.push(img.image_url);
+        });
+    }
+
+    return (
+        <div className="max-w-5xl mx-auto px-4 py-8 pb-20">
+            <button
+                onClick={() => navigate(-1)}
+                className="flex items-center text-sm text-gray-500 hover:text-black mb-6 transition-colors"
+            >
+                <ChevronLeft size={16} className="mr-1" /> Voltar
+            </button>
+
+            <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+                {/* Visual Section: Gallery */}
+                <div className="w-full md:w-1/2 flex flex-col gap-4">
+                    <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden relative group">
+                        <AnimatePresence mode="wait">
+                            <motion.img
+                                key={mainImage || 'placeholder'}
+                                initial={{ opacity: 0, scale: 1.05 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                src={mainImage || ''}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                            />
+                        </AnimatePresence>
+                        {!mainImage && (
+                            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                                Sem imagem
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Thumbnails */}
+                    {galleryItems.length > 1 && (
+                        <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                            {galleryItems.map((url, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setMainImage(url)}
+                                    className={`relative shrink-0 w-20 h-20 rounded-xl overflow-hidden transition-all ${mainImage === url ? 'ring-2 ring-black ring-offset-2' : 'opacity-70 hover:opacity-100'}`}
+                                >
+                                    <img src={url} alt="Thumbnail" className="w-full h-full object-cover" />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Details Section */}
+                <div className="w-full md:w-1/2 flex flex-col">
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {product.categories.map(cat => (
+                            <span key={cat.id} className="text-[12px] font-semibold tracking-wider uppercase bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                                {cat.name}
+                            </span>
+                        ))}
+                    </div>
+
+                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight leading-tight">
+                        {product.name}
+                    </h1>
+
+                    <div className="mt-4 text-3xl font-bold text-black border-b border-gray-100 pb-6">
+                        R$ {product.price}
+                    </div>
+
+                    {/* Color Selector */}
+                    {product.has_colors && globalColors.length > 0 && (
+                        <div className="mt-6">
+                            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                <PaintBucket size={16} /> Cores / Texturas
+                            </h3>
+                            <div className="flex flex-wrap gap-3">
+                                {globalColors.map(color => (
+                                    <button
+                                        key={color.id}
+                                        onClick={() => setSelectedColor(color.id)}
+                                        className={`group relative w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden transition-all duration-300 ${selectedColor === color.id
+                                            ? 'ring-2 ring-black ring-offset-4 scale-110'
+                                            : 'ring-1 ring-gray-200 hover:scale-110'
+                                            }`}
+                                        title={color.name}
+                                    >
+                                        <span className="sr-only">{color.name}</span>
+                                        {color.image ? (
+                                            <img src={color.image} alt={color.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-gray-200" />
+                                        )}
+                                        {/* Tooltip on hover */}
+                                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-[10px] font-medium bg-black text-white px-2 py-1 rounded pointer-events-none transition-opacity whitespace-nowrap z-10">
+                                            {color.name}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-auto pt-8 flex flex-col sm:flex-row gap-4">
+                        {!isInCart && (
+                            <div className="flex items-center justify-between border border-gray-200 rounded-2xl px-4 py-3 sm:py-0 w-full sm:w-1/3">
+                                <button
+                                    onClick={() => handleQuantityChange(-1)}
+                                    className="text-gray-500 hover:text-black font-semibold text-lg px-2"
+                                >
+                                    -
+                                </button>
+                                <span className="font-semibold text-lg">{quantity}</span>
+                                <button
+                                    onClick={() => handleQuantityChange(1)}
+                                    className="text-gray-500 hover:text-black font-semibold text-lg px-2"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        )}
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={isInCart}
+                            className={`flex-1 py-4 px-6 rounded-2xl flex items-center justify-center gap-3 text-lg font-semibold transition-all duration-300 ${isInCart
+                                ? 'bg-green-500 text-white cursor-default'
+                                : 'bg-black text-white hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98]'
+                                }`}
+                        >
+                            {isInCart ? (
+                                <>
+                                    <Check size={24} /> Adicionado ao Carrinho
+                                </>
+                            ) : (
+                                <>
+                                    <ShoppingCart size={24} /> Adicionar ao Carrinho
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Description Section (Full Width Below) */}
+            <div className="mt-16 border-t border-gray-100 pt-16">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Descrição do Produto</h2>
+                <div className="prose prose-gray max-w-none text-gray-600 leading-relaxed">
+                    <p>{product.description || "Este produto não possui descrição detalhada."}</p>
+                </div>
+            </div>
+        </div>
+    );
+};

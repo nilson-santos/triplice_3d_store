@@ -1,6 +1,6 @@
 import { ShoppingCart, Search, X, Menu } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { CartDrawer } from './CartDrawer';
 import { MenuDrawer } from './MenuDrawer';
@@ -15,6 +15,7 @@ export const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,6 +79,15 @@ export const Header = () => {
     }, [setSearchParams]);
 
     const handleCategorySelect = useCallback((categoryId: number | null) => {
+        if (location.pathname !== '/') {
+            const next = new URLSearchParams();
+            if (categoryId !== null) {
+                next.set('category', String(categoryId));
+            }
+            navigate(`/?${next.toString()}`);
+            return;
+        }
+
         setSearchParams(prev => {
             const next = new URLSearchParams(prev);
             if (categoryId !== null) {
@@ -87,7 +97,7 @@ export const Header = () => {
             }
             return next;
         });
-    }, [setSearchParams]);
+    }, [location.pathname, navigate, setSearchParams]);
 
     return (
         <>

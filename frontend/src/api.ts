@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://api.triplice3d.com.br/api',
+    baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://api.triplice3d.com.br/api'),
     headers: {
         'Content-Type': 'application/json',
     },
@@ -10,6 +10,7 @@ export const api = axios.create({
 export interface Product {
     id: number;
     name: string;
+    slug: string;
     description: string;
     price: string;
     image: string | null;
@@ -17,6 +18,12 @@ export interface Product {
         id: number;
         name: string;
         slug: string;
+    }>;
+    has_colors: boolean;
+    images: Array<{
+        id: number;
+        image_url: string;
+        order: number;
     }>;
 }
 
@@ -46,6 +53,17 @@ export interface OrderResponse {
 
 export const getCategories = async () => {
     const res = await api.get<Category[]>('/categories');
+    return res.data;
+};
+
+export interface Color {
+    id: number;
+    name: string;
+    image: string | null;
+}
+
+export const getColors = async () => {
+    const res = await api.get<Color[]>('/colors');
     return res.data;
 };
 

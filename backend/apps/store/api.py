@@ -1,7 +1,7 @@
 from typing import List
 from ninja import NinjaAPI, Schema, ModelSchema
 from django.shortcuts import get_object_or_404
-from .models import Product, Order, OrderItem, Category, Banner
+from .models import Product, Order, OrderItem, Category, Banner, Color, ProductImage
 from uuid import UUID
 
 api = NinjaAPI()
@@ -12,13 +12,38 @@ class CategorySchema(ModelSchema):
         model = Category
         fields = ['id', 'name', 'slug', 'is_default']
 
+class ColorSchema(Schema):
+    id: int
+    name: str
+    image: str | None = None
+
+    @staticmethod
+    def resolve_image(obj, context):
+        request = context.get('request')
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+
+class ProductImageSchema(Schema):
+    id: int
+    image_url: str | None = None
+    order: int
+
+    @staticmethod
+    def resolve_image_url(obj, context):
+        request = context.get('request')
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+
 class ProductSchema(ModelSchema):
     categories: List[CategorySchema]
-    image: str | None = None  # Handle image URL
+    images: List[ProductImageSchema]
+    image: str | None = None  # Handle main image URL
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'slug', 'description', 'price', 'is_active', 'image', 'categories']
+        fields = ['id', 'name', 'slug', 'description', 'price', 'is_active', 'image', 'categories', 'has_colors']
     
     @staticmethod
     def resolve_image(obj, context):
@@ -61,6 +86,10 @@ from ninja.pagination import paginate
 def list_categories(request):
     return Category.objects.filter(products__is_active=True).distinct()
 
+@api.get("/colors", response=List[ColorSchema])
+def list_colors(request):
+    return Color.objects.all()
+
 # Endpoints
 
 @api.get("/products", response=List[ProductSchema])
@@ -86,9 +115,9 @@ def list_products(request, category_id: int = None, search: str = None, ordering
 
     return qs
 
-@api.get("/products/{product_id}", response=ProductSchema)
-def get_product(request, product_id: int):
-    return get_object_or_404(Product, id=product_id)
+@api.get("/products/{slug}", response=ProductSchema)
+def get_product(request, slug: str):
+    return get_object_or_404(Product, slug=slug)
 
 @api.get("/banners", response=List[BannerSchema])
 def list_banners(request):
