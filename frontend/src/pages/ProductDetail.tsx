@@ -95,17 +95,17 @@ export const ProductDetail = () => {
     }
 
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8 pb-20">
+        <div className="max-w-5xl mx-auto px-4 py-4 md:py-8 pb-20 md:pb-20">
             <button
                 onClick={() => navigate(-1)}
-                className="flex items-center text-sm text-gray-500 hover:text-black mb-6 transition-colors"
+                className="flex items-center text-sm text-gray-500 hover:text-black mb-3 md:mb-6 transition-colors"
             >
                 <ChevronLeft size={16} className="mr-1" /> Voltar
             </button>
 
-            <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-8 lg:gap-12">
                 {/* Mobile Title (Hidden on md and up) */}
-                <div className="md:hidden flex flex-col mb-4">
+                <div className="md:hidden flex flex-col mb-1">
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-snug">
                         {product.name}
                     </h1>
@@ -158,7 +158,7 @@ export const ProductDetail = () => {
                         </h1>
                     </div>
 
-                    <div className="mt-4 md:mt-2 text-2xl md:text-3xl font-bold text-black border-b border-gray-100 pb-4 md:pb-6">
+                    <div className="mt-1 md:mt-2 text-2xl md:text-3xl font-bold text-black border-b border-gray-100 pb-4 md:pb-6">
                         R$ {product.price}
                     </div>
 
@@ -195,9 +195,9 @@ export const ProductDetail = () => {
                         </div>
                     )}
 
-                    <div className="mt-auto pt-8 flex flex-col sm:flex-row gap-4">
+                    <div className="mt-auto pt-8 flex gap-3 w-full">
                         {!isInCart && (
-                            <div className="flex items-center justify-between border border-gray-200 rounded-2xl px-4 py-3 sm:py-0 w-full sm:w-1/3">
+                            <div className="flex items-center justify-between border border-gray-200 rounded-2xl px-2 sm:px-4 py-3 sm:py-0 w-[45%] sm:w-1/3 shrink-0">
                                 <button
                                     onClick={() => handleQuantityChange(-1)}
                                     className="text-gray-500 hover:text-black font-semibold text-lg px-2"
@@ -216,18 +216,18 @@ export const ProductDetail = () => {
                         <button
                             onClick={handleAddToCart}
                             disabled={isInCart}
-                            className={`flex-1 py-4 px-6 rounded-2xl flex items-center justify-center gap-3 text-lg font-semibold transition-all duration-300 ${isInCart
+                            className={`flex-1 py-3 sm:py-4 px-2 sm:px-6 rounded-2xl flex items-center justify-center gap-2 text-[13px] sm:text-lg font-semibold transition-all duration-300 ${isInCart
                                 ? 'bg-green-500 text-white cursor-default'
                                 : 'bg-black text-white hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98]'
                                 }`}
                         >
                             {isInCart ? (
                                 <>
-                                    <Check size={24} /> Adicionado ao Carrinho
+                                    <Check size={20} className="sm:w-6 sm:h-6" /> <span className="hidden sm:inline">Adicionado ao Carrinho</span><span className="sm:hidden">Adicionado</span>
                                 </>
                             ) : (
                                 <>
-                                    <ShoppingCart size={24} /> Adicionar ao Carrinho
+                                    <ShoppingCart size={20} className="sm:w-6 sm:h-6" /> Comprar
                                 </>
                             )}
                         </button>
