@@ -104,6 +104,13 @@ export const ProductDetail = () => {
             </button>
 
             <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+                {/* Mobile Title (Hidden on md and up) */}
+                <div className="md:hidden flex flex-col mb-4">
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-snug">
+                        {product.name}
+                    </h1>
+                </div>
+
                 {/* Visual Section: Gallery */}
                 <div className="w-full md:w-1/2 flex flex-col gap-4">
                     <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden relative group">
@@ -144,19 +151,14 @@ export const ProductDetail = () => {
 
                 {/* Details Section */}
                 <div className="w-full md:w-1/2 flex flex-col">
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        {product.categories.map(cat => (
-                            <span key={cat.id} className="text-[12px] font-semibold tracking-wider uppercase bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                                {cat.name}
-                            </span>
-                        ))}
+                    {/* Desktop Title (Hidden on mobile) */}
+                    <div className="hidden md:flex flex-col">
+                        <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight leading-tight">
+                            {product.name}
+                        </h1>
                     </div>
 
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight leading-tight">
-                        {product.name}
-                    </h1>
-
-                    <div className="mt-4 text-3xl font-bold text-black border-b border-gray-100 pb-6">
+                    <div className="mt-4 md:mt-2 text-2xl md:text-3xl font-bold text-black border-b border-gray-100 pb-4 md:pb-6">
                         R$ {product.price}
                     </div>
 
