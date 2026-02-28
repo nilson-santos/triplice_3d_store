@@ -101,17 +101,25 @@ export const Header = () => {
     }, [setSearchParams]);
 
     const handleCategorySelect = useCallback((categoryId: number | null) => {
+        // Limpa a barra de busca visualmente
+        setSearchInput('');
+        setIsSearchOpen(false);
+
         if (location.pathname !== '/') {
             const next = new URLSearchParams();
             if (categoryId !== null) {
                 next.set('category', String(categoryId));
             }
+            // Navega pra home apenas com a categoria
             navigate(`/?${next.toString()}`);
             return;
         }
 
         setSearchParams(prev => {
             const next = new URLSearchParams(prev);
+            // Sempre que clica em uma categoria, a busca por texto é desfeita
+            next.delete('search');
+
             if (categoryId !== null) {
                 next.set('category', String(categoryId));
             } else {
