@@ -71,9 +71,9 @@ export const ProductCard = ({ product }: { product: Product }) => {
                     </div>
                 )}
             </div>
-            <div className="p-4">
-                <h3 className="font-semibold text-lg text-gray-900">{product.name}</h3>
-                <p className="text-gray-500 text-sm mt-1 line-clamp-2">{product.description}</p>
+            <div className="p-3">
+                <h3 className="font-semibold text-sm sm:text-base text-gray-900 line-clamp-1">{product.name}</h3>
+                <p className="text-gray-500 text-xs sm:text-sm mt-1 line-clamp-2">{product.description}</p>
                 <div className="flex flex-wrap gap-1 mt-2">
                     {product.categories.map(cat => (
                         <span key={cat.id} className="text-[10px] font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
@@ -81,17 +81,17 @@ export const ProductCard = ({ product }: { product: Product }) => {
                         </span>
                     ))}
                 </div>
-                <div className="mt-4 flex items-center justify-between">
-                    <span className="text-xl font-bold">R$ {product.price}</span>
+                <div className="mt-3 sm:mt-4 flex items-center justify-between">
+                    <span className="text-base sm:text-lg font-bold">R$ {product.price}</span>
                     <button
                         onClick={() => !isInCart && addToCart(product)}
                         disabled={isInCart}
-                        className={`p-2 rounded-full transition-all duration-300 ${isInCart
+                        className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 ${isInCart
                             ? 'bg-green-500 text-white cursor-default scale-110'
                             : 'bg-black text-white hover:bg-gray-800'
                             }`}
                     >
-                        {isInCart ? <Check size={20} /> : <ShoppingCart size={20} />}
+                        {isInCart ? <Check size={16} className="sm:w-5 sm:h-5" /> : <ShoppingCart size={16} className="sm:w-5 sm:h-5" />}
                     </button>
                 </div>
             </div>

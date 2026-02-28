@@ -7,20 +7,20 @@ export const ProductSkeleton = () => {
             </div>
 
             {/* Content Skeleton */}
-            <div className="p-4 space-y-3">
+            <div className="p-3 space-y-3">
                 {/* Title */}
-                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-5 sm:h-6 bg-gray-200 rounded w-3/4"></div>
 
                 {/* Description */}
                 <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-full"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                    <div className="h-3 sm:h-4 bg-gray-200 rounded w-full"></div>
+                    <div className="h-3 sm:h-4 bg-gray-200 rounded w-5/6"></div>
                 </div>
 
                 {/* Price and Button */}
-                <div className="mt-4 flex items-center justify-between pt-2">
-                    <div className="h-7 bg-gray-200 rounded w-20"></div>
-                    <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                <div className="mt-3 sm:mt-4 flex items-center justify-between pt-2">
+                    <div className="h-6 sm:h-7 bg-gray-200 rounded w-16 sm:w-20"></div>
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gray-200 rounded-full"></div>
                 </div>
             </div>
         </div>
