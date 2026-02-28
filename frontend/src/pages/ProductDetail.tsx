@@ -135,7 +135,7 @@ export const ProductDetail = () => {
 
                     {/* Thumbnails */}
                     {galleryItems.length > 1 && (
-                        <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                        <div className="flex gap-3 overflow-x-auto px-1 pt-1 pb-2 -mx-1 custom-scrollbar">
                             {galleryItems.map((url, idx) => (
                                 <button
                                     key={idx}
