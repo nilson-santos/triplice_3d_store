@@ -57,6 +57,21 @@ export const Header = () => {
 
     const handleSearch = useCallback((e: React.FormEvent) => {
         e.preventDefault();
+
+        // Se temos um termo, buscar globalmente em '/?search=...'
+        // Se estamos APENAS limpando a busca e já estamos na home, mantemos a navegação normal.
+        if (location.pathname !== '/') {
+            const next = new URLSearchParams();
+            if (searchInput.trim()) {
+                next.set('search', searchInput.trim());
+            }
+            // Remove a categoria de qualquer forma forçando a busca global
+            navigate(`/?${next.toString()}`);
+            setIsSearchOpen(false);
+            return;
+        }
+
+        // Se já estamos na home:
         setSearchParams(prev => {
             const next = new URLSearchParams(prev);
             if (searchInput.trim()) {
@@ -64,13 +79,20 @@ export const Header = () => {
             } else {
                 next.delete('search');
             }
+            // Sempre remove a categoria ao fazer uma nova busca para buscar em tudo
+            next.delete('category');
             return next;
         });
         setIsSearchOpen(false);
-    }, [searchInput, setSearchParams]);
+    }, [searchInput, location.pathname, navigate, setSearchParams]);
 
     const clearSearch = useCallback(() => {
         setSearchInput('');
+        if (location.pathname !== '/') {
+            // Volta pra home sem busca e sem categoria se limpar a partir de outra pág
+            navigate('/');
+            return;
+        }
         setSearchParams(prev => {
             const next = new URLSearchParams(prev);
             next.delete('search');
