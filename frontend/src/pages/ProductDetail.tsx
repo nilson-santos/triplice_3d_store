@@ -238,7 +238,7 @@ export const ProductDetail = () => {
             {/* Description Section (Full Width Below) */}
             <div className="mt-6 border-t border-gray-100 pt-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Descrição do Produto</h2>
-                <div className="prose prose-gray max-w-none text-gray-600 leading-relaxed">
+                <div className="prose prose-gray max-w-none text-gray-600 leading-relaxed whitespace-pre-line">
                     <p>{product.description || "Este produto não possui descrição detalhada."}</p>
                 </div>
             </div>

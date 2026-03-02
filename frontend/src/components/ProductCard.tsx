@@ -80,7 +80,7 @@ export const ProductCard = ({ product }: { product: Product }) => {
                 >
                     {product.name}
                 </h3>
-                <p className="text-gray-500 text-xs sm:text-sm mt-1 line-clamp-2">{product.description}</p>
+                <p className="text-gray-500 text-xs sm:text-sm mt-1 line-clamp-2 whitespace-pre-line">{product.description}</p>
 
                 <div className="mt-3 sm:mt-4 flex items-center justify-between">
                     <span className="text-base sm:text-lg font-bold">R$ {product.price}</span>
