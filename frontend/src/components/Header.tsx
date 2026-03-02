@@ -51,6 +51,8 @@ export const Header = () => {
     const handleHomeClick = (e: React.MouseEvent) => {
         if (location.pathname === '/') {
             e.preventDefault();
+            setSearchInput('');
+            setSearchParams({}, { replace: true });
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
