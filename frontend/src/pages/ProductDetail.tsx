@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ShoppingCart, Check, PaintBucket } from 'lucide-react';
+import { ChevronLeft, ShoppingCart, Check, PaintBucket, Ruler } from 'lucide-react';
 import { api, getColors } from '../api';
 import type { Product, Color } from '../api';
 import { useCart } from '../context/CartContext';
@@ -161,6 +161,15 @@ export const ProductDetail = () => {
                     <div className="mt-1 md:mt-2 text-2xl md:text-2xl font-bold text-black border-b border-gray-100 pb-4 md:pb-4">
                         R$ {product.price}
                     </div>
+
+                    {/* Product Size */}
+                    {product.size && (
+                        <div className="mt-3 md:mt-3 flex items-center gap-2 text-sm text-gray-600">
+                            <Ruler size={16} className="text-gray-400" />
+                            <span className="font-medium text-gray-900">Tamanho:</span>
+                            <span>{product.size}</span>
+                        </div>
+                    )}
 
                     {/* Color Selector */}
                     {product.has_colors && globalColors.length > 0 && (

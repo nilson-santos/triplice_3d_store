@@ -61,6 +61,7 @@ def run():
     
     words = ["Action Figure", "Suporte", "Luminária", "Vaso", "Enfeite", "Case", "Peça", "Miniatura", "Base", "Grip"]
     themes = ["Cyberpunk", "Medieval", "Espacial", "Geek", "Moderno", "Minimalista", "Rústico", "Místico"]
+    sizes = ["5x5x10cm", "8x8x15cm", "10x10x20cm", "12x6x8cm", "15x15x25cm", "7x7x12cm", "20x10x10cm", "6x6x14cm", ""]
     
     for i in range(1, 37):
         base_name = f"{random.choice(words)} {random.choice(themes)}"
@@ -71,7 +72,8 @@ def run():
             description=f"Este é um produto de teste gerado automaticamente. Conta com múltiplas opções de cores e imagens secundárias. ID: {i+1}",
             price=Decimal(str(round(random.uniform(20.0, 250.0), 2))),
             is_active=True,
-            has_colors=random.choice([True, False])
+            has_colors=random.choice([True, False]),
+            size=random.choice(sizes)
         )
         
         cats = random.sample(categories, k=random.randint(1, 2))

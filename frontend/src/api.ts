@@ -20,6 +20,7 @@ export interface Product {
         slug: string;
     }>;
     has_colors: boolean;
+    size: string;
     images: Array<{
         id: number;
         image_url: string;

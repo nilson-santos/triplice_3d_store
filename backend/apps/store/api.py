@@ -43,7 +43,7 @@ class ProductSchema(ModelSchema):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'slug', 'description', 'price', 'is_active', 'image', 'categories', 'has_colors']
+        fields = ['id', 'name', 'slug', 'description', 'price', 'is_active', 'image', 'categories', 'has_colors', 'size']
     
     @staticmethod
     def resolve_image(obj, context):

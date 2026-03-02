@@ -26,6 +26,7 @@ class Product(models.Model):
     image = models.ImageField("Imagem Principal", upload_to='products/', null=True, blank=True)
     categories = models.ManyToManyField(Category, related_name='products', verbose_name="Categorias")
     has_colors = models.BooleanField("Requer Cores", default=True)
+    size = models.CharField("Tamanho", max_length=100, blank=True, help_text="Ex: 10x15x20cm")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
