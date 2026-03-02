@@ -55,11 +55,8 @@ export function PromotionalPopup() {
         return true;
     };
 
-    const handleClose = (e?: React.MouseEvent) => {
-        e?.stopPropagation();
-        setIsVisible(false);
+    const markAsSeen = () => {
         if (!promo) return;
-
         const storageKey = `${STORAGE_KEY_PREFIX}${promo.id}`;
         const now = Date.now().toString();
 
@@ -68,6 +65,17 @@ export function PromotionalPopup() {
         } else {
             localStorage.setItem(storageKey, now);
         }
+    };
+
+    const handleClose = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setIsVisible(false);
+        markAsSeen();
+    };
+
+    const handleLinkClick = () => {
+        markAsSeen();
+        setIsVisible(false);
     };
 
     if (!promo) return null;
@@ -100,7 +108,7 @@ export function PromotionalPopup() {
                         {promo.image && (
                             <div className="relative group w-full">
                                 {promo.link_url ? (
-                                    <a href={promo.link_url} className="block relative">
+                                    <a href={promo.link_url} onClick={handleLinkClick} className="block relative">
                                         <img
                                             src={promo.image}
                                             alt={promo.title}
@@ -122,7 +130,7 @@ export function PromotionalPopup() {
                             <div className="bg-white p-8 text-center rounded-lg shadow-2xl">
                                 <h2 className="text-2xl font-bold mb-4">{promo.title}</h2>
                                 {promo.link_url && (
-                                    <a href={promo.link_url} className="inline-flex items-center text-blue-600 hover:underline">
+                                    <a href={promo.link_url} onClick={handleLinkClick} className="inline-flex items-center text-blue-600 hover:underline">
                                         Check it out <ExternalLink size={16} className="ml-1" />
                                     </a>
                                 )}
