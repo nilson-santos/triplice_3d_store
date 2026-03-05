@@ -16,6 +16,7 @@ services:
       retries: 5
     networks:
       - back-end
+    restart: unless-stopped
 
   backend:
     build: ./backend
@@ -48,6 +49,7 @@ services:
     networks:
       - front-end
       - back-end
+    restart: unless-stopped
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=front-end"
@@ -79,6 +81,7 @@ services:
     networks:
       - front-end
       - back-end
+    restart: unless-stopped
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=front-end"
