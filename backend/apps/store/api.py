@@ -1,4 +1,6 @@
 from typing import List
+from urllib.parse import quote
+
 from ninja import NinjaAPI, Schema, ModelSchema
 from django.shortcuts import get_object_or_404
 from .models import Product, Order, OrderItem, Category, Banner, Color, ProductImage
@@ -147,9 +149,9 @@ def create_order(request, payload: OrderCreateSchema):
         total_price += product.price * item.quantity
         items_text.append(f"{item.quantity}x {product.name}")
 
-    # Generate WhatsApp Link
-    nl = "%0A" # url encoded newline
-    message = f"Olá! Gostaria de finalizar o *Pedido #{order.order_number}* de {order.customer_name}.{nl}{nl}*Itens:*{nl}"
+    # Generate WhatsApp link
+    nl = "\n"
+    message = f"Olá! Gostaria de finalizar o *Pedido Nº {order.order_number}* de {order.customer_name}.{nl}{nl}*Itens:*{nl}"
     for it in items_text:
         message += f"- {it}{nl}"
     
@@ -157,7 +159,7 @@ def create_order(request, payload: OrderCreateSchema):
     
     import os
     store_number = os.environ.get('STORE_WHATSAPP_NUMBER', '5511999999999')
-    whatsapp_url = f"https://wa.me/{store_number}?text={message}"
+    whatsapp_url = f"https://wa.me/{store_number}?text={quote(message)}"
 
     return {
         "id": order.id,
@@ -190,4 +192,3 @@ def get_active_promotion(request):
     if not promo:
         return 404, {"message": "No active promotion found"}
     return promo
-

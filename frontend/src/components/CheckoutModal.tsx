@@ -48,7 +48,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl">
                     <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold mb-2">Pedido #{successData.order_number} Recebido!</h2>
+                    <h2 className="text-2xl font-bold mb-2">Pedido Nº {successData.order_number} Recebido!</h2>
                     <p className="text-gray-600 mb-6">
                         Seu pedido foi criado.
                         <br />Finalize enviando para nosso WhatsApp.
