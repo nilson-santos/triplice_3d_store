@@ -481,12 +481,62 @@ def get_active_promotion(request):
         return 404, {"message": "No active promotion found"}
     return promo
 
+import hmac
+import hashlib
+
+def _verify_mp_signature(request, secret):
+    """
+    Verify the authenticity of the Mercado Pago webhook signature.
+    """
+    x_signature = request.headers.get("x-signature")
+    x_request_id = request.headers.get("x-request-id")
+    
+    # We need to get the data ID from the JSON body or params
+    try:
+        data = request.json
+        data_id = data.get("data", {}).get("id") or data.get("id")
+    except Exception:
+        return False
+    
+    if not x_signature or not secret or not x_request_id or not data_id:
+        return False
+
+    # Parse x-signature (format: ts=...,v1=...)
+    try:
+        parts = dict(part.split('=') for part in x_signature.split(','))
+        ts = parts.get('ts')
+        v1 = parts.get('v1')
+    except Exception:
+        return False
+    
+    if not ts or not v1:
+        return False
+
+    # Construct manifest string
+    manifest = f"id:{data_id};request-id:{x_request_id};ts:{ts};"
+    
+    # Generate HMAC-SHA256
+    generated_hash = hmac.new(
+        secret.encode(),
+        manifest.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    return hmac.compare_digest(str(generated_hash), str(v1))
+
+
 @api.post("/webhooks/mercadopago", auth=None)
 def mercadopago_webhook(request):
     """
     Handle asynchronous notifications from Mercado Pago.
     Documentation: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
     """
+    # Optional Security: Verify signature if secret is configured
+    webhook_secret = getattr(settings, 'MERCADOPAGO_WEBHOOK_SECRET', None)
+    if webhook_secret and not _verify_mp_signature(request, webhook_secret):
+        print("Webhook: Signature verification failed.")
+        return 403, {"error": "Invalid signature"}
+
     # 1. Get notification data
     try:
         data = request.json
