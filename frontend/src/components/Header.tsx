@@ -1,5 +1,6 @@
-import { ShoppingCart, Search, X, Menu } from 'lucide-react';
+import { ShoppingCart, Search, X, Menu, UserCircle, LogOut, Package, Heart, Shield } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { CartDrawer } from './CartDrawer';
@@ -11,8 +12,10 @@ import type { Category } from '../api';
 
 export const Header = () => {
     const { items } = useCart();
+    const { isAuthenticated, user, openAuthModal, logout } = useAuth();
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
@@ -21,6 +24,7 @@ export const Header = () => {
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+    const adminUrl = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://api.triplice3d.com.br/api')).replace(/\/api\/?$/, '/admin/');
 
     const selectedCategory = searchParams.get('category');
 
@@ -185,7 +189,6 @@ export const Header = () => {
                         </div>
                     </form>
 
-                    {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-6 font-medium text-gray-600 ml-4">
                         <Link
                             to="/"
@@ -203,7 +206,7 @@ export const Header = () => {
                     </nav>
 
                     {/* Right side icons */}
-                    <div className="flex items-center gap-1 ml-auto shrink-0">
+                    <div className="flex items-center gap-1 sm:gap-2 ml-auto shrink-0 relative">
                         {/* Mobile: search icon toggle */}
                         <button
                             onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -212,6 +215,76 @@ export const Header = () => {
                         >
                             <Search className="w-5 h-5" />
                         </button>
+
+                        {/* User Account / Auth */}
+                        {!isAuthenticated ? (
+                            <div className="hidden sm:flex items-center gap-2 mr-2">
+                                <button onClick={() => openAuthModal('login')} className="text-sm bg-black text-white px-5 py-1.5 rounded-full font-bold hover:bg-gray-800 transition flex items-center gap-1.5">
+                                    <UserCircle size={16} /> Entrar
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition flex items-center gap-1.5"
+                                    aria-label="Conta"
+                                >
+                                    <UserCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+                                    <span className="hidden sm:block text-sm font-medium">{user?.name?.split(' ')[0]}</span>
+                                </button>
+
+                                {isUserMenuOpen && (
+                                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-2 flex flex-col z-50">
+                                        <div className="px-4 py-2 border-b border-gray-100 mb-1">
+                                            <p className="text-sm font-bold truncate">{user?.name}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => { setIsUserMenuOpen(false); navigate('/rastrear-pedido'); }}
+                                            className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-left"
+                                        >
+                                            <Package size={16} />
+                                            Meus Pedidos
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsUserMenuOpen(false); navigate('/favoritos'); }}
+                                            className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-left"
+                                        >
+                                            <Heart size={16} />
+                                            Favoritos
+                                        </button>
+                                        {user?.is_staff && (
+                                            <button
+                                                onClick={() => { setIsUserMenuOpen(false); window.location.href = adminUrl; }}
+                                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-left"
+                                            >
+                                                <Shield size={16} />
+                                                Administração
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => { setIsUserMenuOpen(false); logout(); }}
+                                            className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-left"
+                                        >
+                                            <LogOut size={16} />
+                                            Sair
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Mobile Auth Button (Icon Only) */}
+                        {!isAuthenticated && (
+                            <button
+                                onClick={() => openAuthModal('login')}
+                                className="sm:hidden p-2 hover:bg-gray-100 rounded-full transition"
+                                aria-label="Login"
+                            >
+                                <UserCircle className="w-5 h-5" />
+                            </button>
+                        )}
+
 
                         {/* Cart */}
                         <button

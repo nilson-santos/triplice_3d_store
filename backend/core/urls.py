@@ -16,20 +16,23 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
+
 from apps.store.api import api
+from apps.users.api import router as users_router
 
 admin.site.site_header = "Loja Tríplice 3D"
 admin.site.site_title = "Admin Loja Tríplice 3D"
 admin.site.index_title = "Admin Loja Tríplice 3D"
 admin.site.site_url = "https://triplice3d.com.br/"
 
+api.add_router('/auth/', users_router)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', api.urls),
 ]
-
-from django.conf import settings
-from django.conf.urls.static import static
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

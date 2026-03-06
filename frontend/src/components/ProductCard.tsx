@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Heart } from 'lucide-react';
 import type { Product } from '../api';
+import { useAuth } from '../context/AuthContext';
 
 export const ProductCard = ({ product }: { product: Product }) => {
     const navigate = useNavigate();
@@ -13,12 +14,29 @@ export const ProductCard = ({ product }: { product: Product }) => {
     });
     const [imageLoaded, setImageLoaded] = useState(false);
 
+    const { favoriteIds, toggleFav } = useAuth();
+    const isFavorite = favoriteIds.includes(product.id);
+
     return (
         <div ref={ref} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
             <div
                 className="aspect-square bg-gray-100 relative overflow-hidden cursor-pointer"
                 onClick={() => navigate(`/produto/${product.slug}`)}
             >
+                {/* Favorite Button */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFav(product.id);
+                    }}
+                    className="absolute top-2 right-2 z-20 p-2 bg-white/80 backdrop-blur rounded-full hover:bg-white transition-colors duration-200"
+                    aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                    <Heart
+                        size={18}
+                        className={`transition-colors duration-200 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
+                    />
+                </button>
                 {product.image && (
                     <>
                         <AnimatePresence>

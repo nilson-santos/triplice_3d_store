@@ -60,6 +60,7 @@ def generate_order_number():
     return str(random.randint(1000, 9999))
 
 class Order(models.Model):
+    user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
         ('CONFIRMED', 'Confirmed'),
@@ -70,8 +71,27 @@ class Order(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order_number = models.CharField(max_length=8, unique=True, default=generate_order_number, editable=False)
+    
+    # Guest Checkout Fields
     customer_name = models.CharField(max_length=200)
+    customer_email = models.EmailField(max_length=255, blank=True, null=True)
+    customer_cpf = models.CharField(max_length=14, blank=True, null=True)
     customer_phone = models.CharField(max_length=20)
+    
+    # Shipping Address Fields
+    shipping_address_zipcode = models.CharField(max_length=20, blank=True, null=True)
+    shipping_address_street = models.CharField(max_length=255, blank=True, null=True)
+    shipping_address_number = models.CharField(max_length=50, blank=True, null=True)
+    shipping_address_complement = models.CharField(max_length=255, blank=True, null=True)
+    shipping_address_neighborhood = models.CharField(max_length=150, blank=True, null=True)
+    shipping_address_city = models.CharField(max_length=150, blank=True, null=True)
+    shipping_address_state = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Mercado Pago Fields
+    payment_id = models.CharField(max_length=100, blank=True, null=True)
+    payment_method = models.CharField(max_length=50, blank=True, null=True)
+    payment_status = models.CharField(max_length=50, blank=True, null=True)
+    
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
