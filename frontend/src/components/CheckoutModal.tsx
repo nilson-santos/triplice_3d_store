@@ -20,6 +20,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     const [phone, setPhone] = useState('');
     const [checkingAddressStatus, setCheckingAddressStatus] = useState(false);
     const [needsRegistrationAddress, setNeedsRegistrationAddress] = useState(false);
+    const [pixStep, setPixStep] = useState<1 | 2>(1);
     const [shippingType, setShippingType] = useState<'PICKUP_STORE' | 'FREE_DELIVERY_FOZ'>('PICKUP_STORE');
     const [profileRegistrationCity, setProfileRegistrationCity] = useState('');
     const [registrationZipcode, setRegistrationZipcode] = useState('');
@@ -104,6 +105,12 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
             setShippingType('PICKUP_STORE');
         }
     }, [canUseFozDelivery, shippingType]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setPixStep(1);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -192,6 +199,21 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleNextPixStep = () => {
+        if (needsRegistrationAddress && !requiredRegistrationAddressFilled) {
+            alert('Preencha o endereço de cadastro completo para continuar.');
+            return;
+        }
+        if (shippingType === 'FREE_DELIVERY_FOZ') {
+            const cityToValidate = needsRegistrationAddress ? registrationCity : profileRegistrationCity;
+            if (normalizeCity(cityToValidate) !== 'foz do iguacu') {
+                alert('Entrega grátis disponível apenas para Foz do Iguaçu. Selecione retirada na loja.');
+                return;
+            }
+        }
+        setPixStep(2);
     };
 
     const handleRegeneratePix = async () => {
@@ -353,159 +375,186 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                             onSubmit={handleSubmitPix}
                             className="space-y-4"
                         >
-                            <p className="text-sm text-gray-600">
-                                Olá, <strong>{user?.name}</strong>. Para emitir sua chave PIX, confirme seu CPF.
-                            </p>
-                            <div>
-                                <p className="block text-sm font-medium text-gray-700 mb-2">Tipo de Frete</p>
-                                <div className="space-y-2">
-                                    <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="shippingType"
-                                            value="PICKUP_STORE"
-                                            checked={shippingType === 'PICKUP_STORE'}
-                                            onChange={() => setShippingType('PICKUP_STORE')}
-                                        />
-                                        <span className="text-sm text-gray-800">Retirada na loja (grátis)</span>
-                                    </label>
-                                    <label className={`flex items-center gap-3 rounded-lg border p-3 ${canUseFozDelivery ? 'border-gray-200 cursor-pointer' : 'border-gray-100 bg-gray-50 cursor-not-allowed'}`}>
-                                        <input
-                                            type="radio"
-                                            name="shippingType"
-                                            value="FREE_DELIVERY_FOZ"
-                                            checked={shippingType === 'FREE_DELIVERY_FOZ'}
-                                            onChange={() => setShippingType('FREE_DELIVERY_FOZ')}
-                                            disabled={!canUseFozDelivery}
-                                        />
-                                        <span className={`text-sm ${canUseFozDelivery ? 'text-gray-800' : 'text-gray-400'}`}>
-                                            Entrega em Foz do Iguaçu (grátis)
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-                            {checkingAddressStatus && (
-                                <p className="text-xs text-gray-500">Verificando endereço de cadastro...</p>
-                            )}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">CPF (apenas números)</label>
-                                <input
-                                    type="text"
-                                    required
-                                    maxLength={14}
-                                    inputMode="numeric"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
-                                    placeholder="000.000.000-00"
-                                    value={cpf}
-                                    onChange={(e) => {
-                                        const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
-                                        const formatted = digits
-                                            .replace(/^(\d{3})(\d)/, '$1.$2')
-                                            .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-                                            .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
-                                        setCpf(formatted);
-                                    }}
-                                />
-                            </div>
-                            {needsRegistrationAddress && (
+                            <p className="text-sm text-gray-600">Olá, <strong>{user?.name}</strong>.</p>
+                            <p className="text-xs text-gray-500">Etapa {pixStep} de 2</p>
+
+                            {pixStep === 1 && (
                                 <>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                                        <p className="block text-sm font-medium text-gray-700 mb-2">Tipo de Frete</p>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="shippingType"
+                                                    value="PICKUP_STORE"
+                                                    checked={shippingType === 'PICKUP_STORE'}
+                                                    onChange={() => setShippingType('PICKUP_STORE')}
+                                                />
+                                                <span className="text-sm text-gray-800">Retirada na loja (grátis)</span>
+                                            </label>
+                                            <label className={`flex items-center gap-3 rounded-lg border p-3 ${canUseFozDelivery ? 'border-gray-200 cursor-pointer' : 'border-gray-100 bg-gray-50 cursor-not-allowed'}`}>
+                                                <input
+                                                    type="radio"
+                                                    name="shippingType"
+                                                    value="FREE_DELIVERY_FOZ"
+                                                    checked={shippingType === 'FREE_DELIVERY_FOZ'}
+                                                    onChange={() => setShippingType('FREE_DELIVERY_FOZ')}
+                                                    disabled={!canUseFozDelivery}
+                                                />
+                                                <span className={`text-sm ${canUseFozDelivery ? 'text-gray-800' : 'text-gray-400'}`}>
+                                                    Entrega em Foz do Iguaçu (grátis)
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {checkingAddressStatus && (
+                                        <p className="text-xs text-gray-500">Verificando endereço de cadastro...</p>
+                                    )}
+                                    {needsRegistrationAddress && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    maxLength={9}
+                                                    inputMode="numeric"
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                                    placeholder="00000-000"
+                                                    value={registrationZipcode}
+                                                    onChange={(e) => {
+                                                        const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                                                        const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+                                                        setRegistrationZipcode(formatted);
+                                                    }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                                    placeholder="Ex: Rua das Flores"
+                                                    value={registrationStreet}
+                                                    onChange={(e) => setRegistrationStreet(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                                        placeholder="123"
+                                                        value={registrationNumber}
+                                                        onChange={(e) => setRegistrationNumber(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                                                    <input
+                                                        type="text"
+                                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                                        placeholder="Apto, bloco, etc."
+                                                        value={registrationComplement}
+                                                        onChange={(e) => setRegistrationComplement(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                                    placeholder="Ex: Centro"
+                                                    value={registrationNeighborhood}
+                                                    onChange={(e) => setRegistrationNeighborhood(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                                        placeholder="Ex: São Paulo"
+                                                        value={registrationCity}
+                                                        onChange={(e) => setRegistrationCity(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Estado (UF)</label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        maxLength={2}
+                                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition uppercase"
+                                                        placeholder="SP"
+                                                        value={registrationState}
+                                                        onChange={(e) => setRegistrationState(e.target.value.toUpperCase())}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={handleNextPixStep}
+                                        disabled={checkingAddressStatus}
+                                        className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 mt-4"
+                                    >
+                                        Continuar
+                                    </button>
+                                </>
+                            )}
+
+                            {pixStep === 2 && (
+                                <>
+                                    <p className="text-sm text-gray-600">Para emitir a chave PIX, confirme seu CPF.</p>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">CPF (apenas números)</label>
                                         <input
                                             type="text"
                                             required
-                                            maxLength={9}
+                                            maxLength={14}
                                             inputMode="numeric"
                                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
-                                            placeholder="00000-000"
-                                            value={registrationZipcode}
+                                            placeholder="000.000.000-00"
+                                            value={cpf}
                                             onChange={(e) => {
-                                                const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
-                                                const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
-                                                setRegistrationZipcode(formatted);
+                                                const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+                                                const formatted = digits
+                                                    .replace(/^(\d{3})(\d)/, '$1.$2')
+                                                    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+                                                    .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+                                                setCpf(formatted);
                                             }}
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
-                                            placeholder="Ex: Rua das Flores"
-                                            value={registrationStreet}
-                                            onChange={(e) => setRegistrationStreet(e.target.value)}
-                                        />
-                                    </div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
-                                                placeholder="123"
-                                                value={registrationNumber}
-                                                onChange={(e) => setRegistrationNumber(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
-                                            <input
-                                                type="text"
-                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
-                                                placeholder="Apto, bloco, etc."
-                                                value={registrationComplement}
-                                                onChange={(e) => setRegistrationComplement(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
-                                            placeholder="Ex: Centro"
-                                            value={registrationNeighborhood}
-                                            onChange={(e) => setRegistrationNeighborhood(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
-                                                placeholder="Ex: São Paulo"
-                                                value={registrationCity}
-                                                onChange={(e) => setRegistrationCity(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Estado (UF)</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                maxLength={2}
-                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition uppercase"
-                                                placeholder="SP"
-                                                value={registrationState}
-                                                onChange={(e) => setRegistrationState(e.target.value.toUpperCase())}
-                                            />
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPixStep(1)}
+                                            className="w-full bg-gray-100 text-gray-800 font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors"
+                                        >
+                                            Voltar
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={loading || cpfDigits.length < 11}
+                                            className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {loading ? 'Gerando PIX...' : <><QrCode size={20} /> Gerar PIX</>}
+                                        </button>
                                     </div>
                                 </>
                             )}
 
-                            <button
-                                type="submit"
-                                disabled={loading || checkingAddressStatus || cpfDigits.length < 11 || (needsRegistrationAddress && !requiredRegistrationAddressFilled)}
-                                className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 mt-4 flex items-center justify-center gap-2"
-                            >
-                                {loading ? 'Gerando PIX...' : <><QrCode size={20} /> Gerar PIX</>}
-                            </button>
                             <div className="text-center mt-3">
                                 <span className="text-xs text-gray-500 font-medium flex items-center justify-center gap-1">
                                     <ShieldCheck size={14} /> Processado de forma segura

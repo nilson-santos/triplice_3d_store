@@ -25,6 +25,14 @@ export const AuthModal = ({ isOpen, onClose, initialView = 'login' }: AuthModalP
     const [otp, setOtp] = useState('');
     const [resendTimer, setResendTimer] = useState(0);
 
+    const formatPhone = (rawValue: string) => {
+        const digits = rawValue.replace(/\D/g, '').slice(0, 11);
+        if (digits.length <= 2) return digits;
+        if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+        if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    };
+
     useEffect(() => {
         if (resendTimer > 0) {
             const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
@@ -156,8 +164,16 @@ export const AuthModal = ({ isOpen, onClose, initialView = 'login' }: AuthModalP
                             <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
                             <div className="relative">
                                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                <input type="tel" required value={phone} onChange={e => setPhone(e.target.value)}
-                                    className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none" />
+                                <input
+                                    type="tel"
+                                    required
+                                    inputMode="numeric"
+                                    maxLength={15}
+                                    value={phone}
+                                    onChange={e => setPhone(formatPhone(e.target.value))}
+                                    className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none"
+                                    placeholder="(45) 99999-9999"
+                                />
                             </div>
                         </div>
                         <button type="submit" disabled={loading} className="w-full bg-black text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition mt-6">
