@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ShoppingCart, Check, PaintBucket, Ruler } from 'lucide-react';
+import { ChevronLeft, ShoppingCart, Check, PaintBucket, Ruler, Heart } from 'lucide-react';
 import { api, getColors } from '../api';
 import type { Product, Color } from '../api';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 export const ProductDetail = () => {
     const { slug } = useParams();
@@ -22,7 +23,9 @@ export const ProductDetail = () => {
     // Global colors
     const [globalColors, setGlobalColors] = useState<Color[]>([]);
 
+    const { favoriteIds, toggleFav } = useAuth();
     const isInCart = product ? items.some(item => item.id === product.id) : false;
+    const isFavorite = product ? favoriteIds.includes(product.id) : false;
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -158,8 +161,15 @@ export const ProductDetail = () => {
                         </h1>
                     </div>
 
-                    <div className="mt-1 md:mt-2 text-2xl md:text-2xl font-bold text-black border-b border-gray-100 pb-4 md:pb-4">
-                        R$ {product.price}
+                    <div className="mt-1 md:mt-2 border-b border-gray-100 pb-4 md:pb-4 flex justify-between items-center">
+                        <span className="text-2xl md:text-2xl font-bold text-black">R$ {product.price}</span>
+                        <button
+                            onClick={() => toggleFav(product.id)}
+                            className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center -mr-2"
+                            aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                        >
+                            <Heart size={24} className={`transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 hover:text-gray-600'}`} />
+                        </button>
                     </div>
 
                     {/* Product Size */}

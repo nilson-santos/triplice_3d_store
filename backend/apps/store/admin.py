@@ -41,11 +41,11 @@ class OrderAdmin(admin.ModelAdmin):
 
     order_display.short_description = "Pedido"
     
-    list_display = ('order_display', 'customer_name', 'status', 'created_at')
-    list_filter = ('status', 'created_at')
+    list_display = ('order_display', 'customer_name', 'shipping_type', 'status', 'created_at')
+    list_filter = ('shipping_type', 'status', 'created_at')
     search_fields = ('customer_name', 'id')
     inlines = [OrderItemInline]
-    readonly_fields = ('id', 'created_at')
+    readonly_fields = ('id', 'created_at', 'shipping_type')
 
 @admin.register(PromotionalPopup)
 class PromotionalPopupAdmin(admin.ModelAdmin):

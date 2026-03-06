@@ -7,6 +7,14 @@ export const api = axios.create({
     },
 });
 
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 export interface Product {
     id: number;
     name: string;
@@ -46,14 +54,71 @@ export interface CreateOrderPayload {
     items: OrderItem[];
 }
 
-export interface OrderResponse {
+export interface CreateOrderPixPayload {
+    customer_cpf: string;
+    shipping_type?: 'PICKUP_STORE' | 'FREE_DELIVERY_FOZ';
+    shipping_address_zipcode?: string;
+    shipping_address_street?: string;
+    shipping_address_number?: string;
+    shipping_address_complement?: string;
+    shipping_address_neighborhood?: string;
+    shipping_address_city?: string;
+    shipping_address_state?: string;
+    items: OrderItem[];
+}
+
+export interface OrderPixResponse {
     id: string;
     order_number: string;
-    whatsapp_url: string;
+    qr_code_base64: string | null;
+    qr_code_copia_e_cola: string | null;
+    payment_status: string | null;
+}
+
+export interface TrackedProduct {
+    name: string;
+    quantity: number;
+    image: string | null;
+}
+
+export interface TrackedOrder {
+    id: string;
+    order_number: string;
+    status: string;
+    payment_status: string | null;
+    created_at: string;
+    items: TrackedProduct[];
+    total: number;
+}
+
+export interface ProfileAddressStatus {
+    has_registration_address: boolean;
+    registration_address_zipcode: string | null;
+    registration_address_street: string | null;
+    registration_address_number: string | null;
+    registration_address_complement: string | null;
+    registration_address_neighborhood: string | null;
+    registration_address_city: string | null;
+    registration_address_state: string | null;
 }
 
 export const getCategories = async () => {
     const res = await api.get<Category[]>('/categories');
+    return res.data;
+};
+
+export const getMyOrders = async (): Promise<TrackedOrder[]> => {
+    const res = await api.get<TrackedOrder[]>('/orders/my');
+    return res.data;
+};
+
+export const regenerateOrderPix = async (orderId: string): Promise<OrderPixResponse> => {
+    const res = await api.post<OrderPixResponse>(`/checkout/pix/${orderId}/regenerate`);
+    return res.data;
+};
+
+export const getProfileAddressStatus = async (): Promise<ProfileAddressStatus> => {
+    const res = await api.get<ProfileAddressStatus>('/auth/profile/address-status');
     return res.data;
 };
 
@@ -98,3 +163,11 @@ export const getBanners = async (): Promise<Banner[]> => {
     return res.data;
 };
 
+export const fetchFavorites = async (): Promise<number[]> => {
+    const res = await api.get<any[]>('/auth/favorites');
+    return res.data.map(f => f.product_id);
+};
+
+export const toggleFavoriteAPI = async (productId: number) => {
+    await api.post('/auth/favorites/toggle', { product_id: productId });
+};

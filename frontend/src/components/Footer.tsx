@@ -74,7 +74,7 @@ export const Footer = () => {
 
                 <div className="pb-1 pt-8 border-t border-gray-100 text-center text-gray-500 text-sm">
                     <p>
-                        Copyright &copy; {new Date().getFullYear()} Todos os direitos reservados | <a href="https://api.triplice3d.com.br/admin" className="hover:text-black transition-colors">Tríplice 3D</a>
+                        Copyright &copy; {new Date().getFullYear()} Todos os direitos reservados | Tríplice 3D
                     </p>
                 </div>
             </div>
