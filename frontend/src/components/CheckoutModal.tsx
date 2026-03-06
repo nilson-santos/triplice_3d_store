@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { api } from '../api';
+import { api, getProfileAddressStatus } from '../api';
 import type { CreateOrderPayload, CreateOrderPixPayload, OrderPixResponse } from '../api';
 import { X, CheckCircle, Smartphone, QrCode, Copy, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +18,17 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     const [cpf, setCpf] = useState('');
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
+    const [checkingAddressStatus, setCheckingAddressStatus] = useState(false);
+    const [needsRegistrationAddress, setNeedsRegistrationAddress] = useState(false);
+    const [shippingType, setShippingType] = useState<'PICKUP_STORE' | 'FREE_DELIVERY_FOZ'>('PICKUP_STORE');
+    const [profileRegistrationCity, setProfileRegistrationCity] = useState('');
+    const [registrationZipcode, setRegistrationZipcode] = useState('');
+    const [registrationStreet, setRegistrationStreet] = useState('');
+    const [registrationNumber, setRegistrationNumber] = useState('');
+    const [registrationComplement, setRegistrationComplement] = useState('');
+    const [registrationNeighborhood, setRegistrationNeighborhood] = useState('');
+    const [registrationCity, setRegistrationCity] = useState('');
+    const [registrationState, setRegistrationState] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [successData, setSuccessData] = useState<OrderPixResponse | null>(null);
@@ -25,11 +36,74 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
     const [copied, setCopied] = useState(false);
     const cpfDigits = cpf.replace(/\D/g, '');
+    const zipcodeDigits = registrationZipcode.replace(/\D/g, '');
+    const requiredRegistrationAddressFilled =
+        zipcodeDigits.length === 8 &&
+        registrationStreet.trim().length > 0 &&
+        registrationNumber.trim().length > 0 &&
+        registrationNeighborhood.trim().length > 0 &&
+        registrationCity.trim().length > 0 &&
+        registrationState.trim().length > 0;
     const qrImageSrc = successData?.qr_code_base64
         ? (successData.qr_code_base64.startsWith('data:image')
             ? successData.qr_code_base64
             : `data:image/png;base64,${successData.qr_code_base64}`)
         : null;
+    const normalizeCity = (value: string) =>
+        value
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase();
+    const canUseFozDelivery = needsRegistrationAddress || normalizeCity(profileRegistrationCity) === 'foz do iguacu';
+
+    useEffect(() => {
+        if (!isOpen || !USE_MERCADOPAGO || !isAuthenticated) {
+            return;
+        }
+
+        let cancelled = false;
+        const loadAddressStatus = async () => {
+            setCheckingAddressStatus(true);
+            try {
+                const status = await getProfileAddressStatus();
+                if (cancelled) return;
+
+                const shouldAskAddress = !status.has_registration_address;
+                setNeedsRegistrationAddress(shouldAskAddress);
+                setProfileRegistrationCity(status.registration_address_city ?? '');
+                if (shouldAskAddress) {
+                    setRegistrationZipcode(status.registration_address_zipcode ?? '');
+                    setRegistrationStreet(status.registration_address_street ?? '');
+                    setRegistrationNumber(status.registration_address_number ?? '');
+                    setRegistrationComplement(status.registration_address_complement ?? '');
+                    setRegistrationNeighborhood(status.registration_address_neighborhood ?? '');
+                    setRegistrationCity(status.registration_address_city ?? '');
+                    setRegistrationState(status.registration_address_state ?? '');
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    setNeedsRegistrationAddress(true);
+                }
+            } finally {
+                if (!cancelled) {
+                    setCheckingAddressStatus(false);
+                }
+            }
+        };
+
+        loadAddressStatus();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, isOpen]);
+
+    useEffect(() => {
+        if (!canUseFozDelivery && shippingType === 'FREE_DELIVERY_FOZ') {
+            setShippingType('PICKUP_STORE');
+        }
+    }, [canUseFozDelivery, shippingType]);
 
     if (!isOpen) return null;
 
@@ -68,15 +142,38 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
     const handleSubmitPix = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (needsRegistrationAddress && !requiredRegistrationAddressFilled) {
+            alert('Preencha o endereço de cadastro completo para continuar.');
+            return;
+        }
+        if (shippingType === 'FREE_DELIVERY_FOZ') {
+            const cityToValidate = needsRegistrationAddress ? registrationCity : profileRegistrationCity;
+            if (normalizeCity(cityToValidate) !== 'foz do iguacu') {
+                alert('Entrega grátis disponível apenas para Foz do Iguaçu. Selecione retirada na loja.');
+                return;
+            }
+        }
+
         setLoading(true);
 
         const payload: CreateOrderPixPayload = {
             customer_cpf: cpfDigits,
+            shipping_type: shippingType,
             items: items.map(item => ({
                 product_id: item.id,
                 quantity: item.quantity
             }))
         };
+
+        if (needsRegistrationAddress) {
+            payload.shipping_address_zipcode = registrationZipcode.trim();
+            payload.shipping_address_street = registrationStreet.trim();
+            payload.shipping_address_number = registrationNumber.trim();
+            payload.shipping_address_complement = registrationComplement.trim() || undefined;
+            payload.shipping_address_neighborhood = registrationNeighborhood.trim();
+            payload.shipping_address_city = registrationCity.trim();
+            payload.shipping_address_state = registrationState.trim();
+        }
 
         try {
             const response = await api.post('/checkout/pix', payload);
@@ -86,6 +183,9 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
             console.error('Failed to process PIX order', error);
             if (error.response?.status === 401) {
                 alert('Sessão expirada. Faça login novamente.');
+            } else if (error.response?.status === 400) {
+                setNeedsRegistrationAddress(true);
+                alert(error.response?.data?.error || 'É necessário informar seu endereço de cadastro.');
             } else {
                 alert('Erro ao gerar código PIX. Verifique seu CPF e tente novamente.');
             }
@@ -257,6 +357,37 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                 Olá, <strong>{user?.name}</strong>. Para emitir sua chave PIX, confirme seu CPF.
                             </p>
                             <div>
+                                <p className="block text-sm font-medium text-gray-700 mb-2">Tipo de Frete</p>
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="shippingType"
+                                            value="PICKUP_STORE"
+                                            checked={shippingType === 'PICKUP_STORE'}
+                                            onChange={() => setShippingType('PICKUP_STORE')}
+                                        />
+                                        <span className="text-sm text-gray-800">Retirada na loja (grátis)</span>
+                                    </label>
+                                    <label className={`flex items-center gap-3 rounded-lg border p-3 ${canUseFozDelivery ? 'border-gray-200 cursor-pointer' : 'border-gray-100 bg-gray-50 cursor-not-allowed'}`}>
+                                        <input
+                                            type="radio"
+                                            name="shippingType"
+                                            value="FREE_DELIVERY_FOZ"
+                                            checked={shippingType === 'FREE_DELIVERY_FOZ'}
+                                            onChange={() => setShippingType('FREE_DELIVERY_FOZ')}
+                                            disabled={!canUseFozDelivery}
+                                        />
+                                        <span className={`text-sm ${canUseFozDelivery ? 'text-gray-800' : 'text-gray-400'}`}>
+                                            Entrega em Foz do Iguaçu (grátis)
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                            {checkingAddressStatus && (
+                                <p className="text-xs text-gray-500">Verificando endereço de cadastro...</p>
+                            )}
+                            <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">CPF (apenas números)</label>
                                 <input
                                     type="text"
@@ -276,10 +407,101 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                     }}
                                 />
                             </div>
+                            {needsRegistrationAddress && (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            maxLength={9}
+                                            inputMode="numeric"
+                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                            placeholder="00000-000"
+                                            value={registrationZipcode}
+                                            onChange={(e) => {
+                                                const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                                                const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+                                                setRegistrationZipcode(formatted);
+                                            }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                            placeholder="Ex: Rua das Flores"
+                                            value={registrationStreet}
+                                            onChange={(e) => setRegistrationStreet(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                                placeholder="123"
+                                                value={registrationNumber}
+                                                onChange={(e) => setRegistrationNumber(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                                            <input
+                                                type="text"
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                                placeholder="Apto, bloco, etc."
+                                                value={registrationComplement}
+                                                onChange={(e) => setRegistrationComplement(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                            placeholder="Ex: Centro"
+                                            value={registrationNeighborhood}
+                                            onChange={(e) => setRegistrationNeighborhood(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+                                                placeholder="Ex: São Paulo"
+                                                value={registrationCity}
+                                                onChange={(e) => setRegistrationCity(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Estado (UF)</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                maxLength={2}
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition uppercase"
+                                                placeholder="SP"
+                                                value={registrationState}
+                                                onChange={(e) => setRegistrationState(e.target.value.toUpperCase())}
+                                            />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
 
                             <button
                                 type="submit"
-                                disabled={loading || cpfDigits.length < 11}
+                                disabled={loading || checkingAddressStatus || cpfDigits.length < 11 || (needsRegistrationAddress && !requiredRegistrationAddressFilled)}
                                 className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 mt-4 flex items-center justify-center gap-2"
                             >
                                 {loading ? 'Gerando PIX...' : <><QrCode size={20} /> Gerar PIX</>}

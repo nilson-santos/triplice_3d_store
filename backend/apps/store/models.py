@@ -68,6 +68,10 @@ class Order(models.Model):
         ('COMPLETED', 'Completed'),
         ('CANCELLED', 'Cancelled'),
     ]
+    SHIPPING_TYPE_CHOICES = [
+        ('PICKUP_STORE', 'Retirada na loja (grátis)'),
+        ('FREE_DELIVERY_FOZ', 'Entrega em Foz do Iguaçu (grátis)'),
+    ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order_number = models.CharField(max_length=8, unique=True, default=generate_order_number, editable=False)
@@ -86,6 +90,7 @@ class Order(models.Model):
     shipping_address_neighborhood = models.CharField(max_length=150, blank=True, null=True)
     shipping_address_city = models.CharField(max_length=150, blank=True, null=True)
     shipping_address_state = models.CharField(max_length=50, blank=True, null=True)
+    shipping_type = models.CharField(max_length=30, choices=SHIPPING_TYPE_CHOICES, default='PICKUP_STORE')
     
     # Mercado Pago Fields
     payment_id = models.CharField(max_length=100, blank=True, null=True)

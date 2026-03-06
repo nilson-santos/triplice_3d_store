@@ -56,6 +56,7 @@ export interface CreateOrderPayload {
 
 export interface CreateOrderPixPayload {
     customer_cpf: string;
+    shipping_type?: 'PICKUP_STORE' | 'FREE_DELIVERY_FOZ';
     shipping_address_zipcode?: string;
     shipping_address_street?: string;
     shipping_address_number?: string;
@@ -90,6 +91,17 @@ export interface TrackedOrder {
     total: number;
 }
 
+export interface ProfileAddressStatus {
+    has_registration_address: boolean;
+    registration_address_zipcode: string | null;
+    registration_address_street: string | null;
+    registration_address_number: string | null;
+    registration_address_complement: string | null;
+    registration_address_neighborhood: string | null;
+    registration_address_city: string | null;
+    registration_address_state: string | null;
+}
+
 export const getCategories = async () => {
     const res = await api.get<Category[]>('/categories');
     return res.data;
@@ -102,6 +114,11 @@ export const getMyOrders = async (): Promise<TrackedOrder[]> => {
 
 export const regenerateOrderPix = async (orderId: string): Promise<OrderPixResponse> => {
     const res = await api.post<OrderPixResponse>(`/checkout/pix/${orderId}/regenerate`);
+    return res.data;
+};
+
+export const getProfileAddressStatus = async (): Promise<ProfileAddressStatus> => {
+    const res = await api.get<ProfileAddressStatus>('/auth/profile/address-status');
     return res.data;
 };
 

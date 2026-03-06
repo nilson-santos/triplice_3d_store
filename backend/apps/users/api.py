@@ -38,6 +38,17 @@ class TokenOut(Schema):
     email_verified: bool
     is_staff: bool
 
+
+class ProfileAddressStatusOut(Schema):
+    has_registration_address: bool
+    registration_address_zipcode: str | None = None
+    registration_address_street: str | None = None
+    registration_address_number: str | None = None
+    registration_address_complement: str | None = None
+    registration_address_neighborhood: str | None = None
+    registration_address_city: str | None = None
+    registration_address_state: str | None = None
+
 def generate_otp_for_user(user: UserProfile) -> str:
     if not user.otp_secret:
         user.otp_secret = pyotp.random_base32()
@@ -73,15 +84,18 @@ def register(request, payload: RegisterIn):
     html_content = f"""
     <!DOCTYPE html>
     <html>
-    <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 40px 20px;">
-        <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02); text-align: center;">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px 10px;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; padding: 30px 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02); text-align: center;">
             <h2 style="color: #111827; margin-bottom: 24px; font-size: 24px; font-weight: 700;">Tríplice 3D</h2>
             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">
                 Olá {user.first_name},<br><br>
                 Bem-vindo(a)! Aqui está o seu código de acesso para entrar.
             </p>
-            <div style="background-color: #f3f4f6; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
-                <p style="font-size: 36px; font-weight: 800; color: #000000; letter-spacing: 8px; margin: 0; font-family: monospace;">{otp}</p>
+            <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin-bottom: 32px;">
+                <p style="font-size: 32px; font-weight: 800; color: #000000; letter-spacing: 6px; margin: 0; font-family: monospace;">{otp}</p>
             </div>
             <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
                 Este código é válido por <strong>5 minutos</strong>.<br>Se você não fez essa solicitação, pode ignorar este e-mail.
@@ -146,15 +160,18 @@ def request_code(request, payload: RequestCodeIn):
     html_content = f"""
     <!DOCTYPE html>
     <html>
-    <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 40px 20px;">
-        <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02); text-align: center;">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px 10px;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; padding: 30px 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02); text-align: center;">
             <h2 style="color: #111827; margin-bottom: 24px; font-size: 24px; font-weight: 700;">Tríplice 3D</h2>
             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">
                 Olá {user.first_name},<br><br>
                 Recebemos um pedido de acesso para a sua conta. Use o código abaixo para entrar no site:
             </p>
-            <div style="background-color: #f3f4f6; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
-                <p style="font-size: 36px; font-weight: 800; color: #000000; letter-spacing: 8px; margin: 0; font-family: monospace;">{otp}</p>
+            <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin-bottom: 32px;">
+                <p style="font-size: 32px; font-weight: 800; color: #000000; letter-spacing: 6px; margin: 0; font-family: monospace;">{otp}</p>
             </div>
             <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
                 Este código é válido por <strong>5 minutos</strong>.<br>Se você não fez essa solicitação, pode ignorar este e-mail tranquilamente.
@@ -178,6 +195,35 @@ def request_code(request, payload: RequestCodeIn):
         pass 
         
     return 200, {"message": "Código enviado para seu e-mail."}
+
+
+@router.get("/profile/address-status", response=ProfileAddressStatusOut, auth=JWTAuth())
+def profile_address_status(request):
+    user = request.user
+    profile = getattr(user, "profile", None)
+
+    if not profile:
+        return {
+            "has_registration_address": False,
+            "registration_address_zipcode": None,
+            "registration_address_street": None,
+            "registration_address_number": None,
+            "registration_address_complement": None,
+            "registration_address_neighborhood": None,
+            "registration_address_city": None,
+            "registration_address_state": None,
+        }
+
+    return {
+        "has_registration_address": profile.has_registration_address(),
+        "registration_address_zipcode": profile.registration_address_zipcode,
+        "registration_address_street": profile.registration_address_street,
+        "registration_address_number": profile.registration_address_number,
+        "registration_address_complement": profile.registration_address_complement,
+        "registration_address_neighborhood": profile.registration_address_neighborhood,
+        "registration_address_city": profile.registration_address_city,
+        "registration_address_state": profile.registration_address_state,
+    }
 
 class FavoriteSchema(Schema):
     product_id: int

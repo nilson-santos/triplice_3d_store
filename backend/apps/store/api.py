@@ -1,4 +1,5 @@
 from typing import List
+import unicodedata
 
 from ninja import NinjaAPI, Schema, ModelSchema
 from django.shortcuts import get_object_or_404
@@ -7,6 +8,7 @@ from uuid import UUID
 from django.conf import settings
 from ninja_jwt.authentication import JWTAuth
 import mercadopago
+from apps.users.models import UserProfile
 
 api = NinjaAPI()
 
@@ -62,6 +64,7 @@ class OrderItemSchema(Schema):
 
 class OrderPixCreateSchema(Schema):
     customer_cpf: str
+    shipping_type: str = "PICKUP_STORE"
     shipping_address_zipcode: str | None = None
     shipping_address_street: str | None = None
     shipping_address_number: str | None = None
@@ -170,27 +173,80 @@ def _extract_qr_data(payment: dict) -> tuple[str | None, str | None]:
     return transaction_data.get("qr_code_base64"), transaction_data.get("qr_code")
 
 
-@api.post("/checkout/pix", response={200: OrderResponseSchema, 502: ErrorResponseSchema}, auth=JWTAuth())
+def _has_complete_address(address_data: dict[str, str | None]) -> bool:
+    required_fields = [
+        address_data.get("zipcode"),
+        address_data.get("street"),
+        address_data.get("number"),
+        address_data.get("neighborhood"),
+        address_data.get("city"),
+        address_data.get("state"),
+    ]
+    return all(bool(value and str(value).strip()) for value in required_fields)
+
+
+def _normalize_text(value: str | None) -> str:
+    if not value:
+        return ""
+    normalized = unicodedata.normalize("NFKD", value)
+    return "".join(char for char in normalized if not unicodedata.combining(char)).strip().lower()
+
+
+@api.post("/checkout/pix", response={200: OrderResponseSchema, 400: ErrorResponseSchema, 502: ErrorResponseSchema}, auth=JWTAuth())
 def checkout_pix(request, payload: OrderPixCreateSchema):
     user = request.user
     sdk = mercadopago.SDK(getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', ''))
+    profile, _ = UserProfile.objects.get_or_create(user=user)
     
     # Clean CPF for MP API
     clean_cpf = ''.join(filter(str.isdigit, payload.customer_cpf))
+
+    payload_address = {
+        "zipcode": payload.shipping_address_zipcode,
+        "street": payload.shipping_address_street,
+        "number": payload.shipping_address_number,
+        "complement": payload.shipping_address_complement,
+        "neighborhood": payload.shipping_address_neighborhood,
+        "city": payload.shipping_address_city,
+        "state": payload.shipping_address_state,
+    }
+    shipping_type = (payload.shipping_type or "PICKUP_STORE").strip().upper()
+
+    if shipping_type not in {"PICKUP_STORE", "FREE_DELIVERY_FOZ"}:
+        return 400, {"error": "Tipo de frete inválido."}
+
+    if not profile.has_registration_address():
+        if not _has_complete_address(payload_address):
+            return 400, {"error": "Endereço de cadastro obrigatório. Preencha CEP, rua, número, bairro, cidade e estado."}
+
+        profile.registration_address_zipcode = payload_address["zipcode"]
+        profile.registration_address_street = payload_address["street"]
+        profile.registration_address_number = payload_address["number"]
+        profile.registration_address_complement = payload_address["complement"]
+        profile.registration_address_neighborhood = payload_address["neighborhood"]
+        profile.registration_address_city = payload_address["city"]
+        profile.registration_address_state = payload_address["state"]
+        profile.save()
+
+    if shipping_type == "FREE_DELIVERY_FOZ":
+        registration_city = _normalize_text(profile.registration_address_city)
+        if registration_city != "foz do iguacu":
+            return 400, {"error": "Entrega grátis disponível apenas para endereços em Foz do Iguaçu. Selecione retirada na loja."}
 
     order = Order.objects.create(
         user=user,
         customer_name=user.first_name or user.username,
         customer_email=user.email,
-        customer_phone=getattr(user.profile, 'phone', '') if hasattr(user, 'profile') else '',
+        customer_phone=getattr(profile, 'phone', '') or '',
         customer_cpf=clean_cpf,
-        shipping_address_zipcode=payload.shipping_address_zipcode,
-        shipping_address_street=payload.shipping_address_street,
-        shipping_address_number=payload.shipping_address_number,
-        shipping_address_complement=payload.shipping_address_complement,
-        shipping_address_neighborhood=payload.shipping_address_neighborhood,
-        shipping_address_city=payload.shipping_address_city,
-        shipping_address_state=payload.shipping_address_state,
+        shipping_type=shipping_type,
+        shipping_address_zipcode=profile.registration_address_zipcode,
+        shipping_address_street=profile.registration_address_street,
+        shipping_address_number=profile.registration_address_number,
+        shipping_address_complement=profile.registration_address_complement,
+        shipping_address_neighborhood=profile.registration_address_neighborhood,
+        shipping_address_city=profile.registration_address_city,
+        shipping_address_state=profile.registration_address_state,
         status='PENDING'
     )
     
