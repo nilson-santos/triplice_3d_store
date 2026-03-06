@@ -1,5 +1,9 @@
 from typing import List
 import unicodedata
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from ninja import NinjaAPI, Schema, ModelSchema
 from django.shortcuts import get_object_or_404
@@ -484,19 +488,15 @@ def get_active_promotion(request):
 import hmac
 import hashlib
 
-def _verify_mp_signature(request, secret):
+def _verify_mp_signature(request, data, secret):
     """
     Verify the authenticity of the Mercado Pago webhook signature.
     """
     x_signature = request.headers.get("x-signature")
     x_request_id = request.headers.get("x-request-id")
     
-    # We need to get the data ID from the JSON body or params
-    try:
-        data = request.json
-        data_id = data.get("data", {}).get("id") or data.get("id")
-    except Exception:
-        return False
+    # Get the data ID from the JSON body
+    data_id = data.get("data", {}).get("id") or data.get("id")
     
     if not x_signature or not secret or not x_request_id or not data_id:
         return False
@@ -531,17 +531,18 @@ def mercadopago_webhook(request):
     Handle asynchronous notifications from Mercado Pago.
     Documentation: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
     """
-    # Optional Security: Verify signature if secret is configured
-    webhook_secret = getattr(settings, 'MERCADOPAGO_WEBHOOK_SECRET', None)
-    if webhook_secret and not _verify_mp_signature(request, webhook_secret):
-        print("Webhook: Signature verification failed.")
-        return 403, {"error": "Invalid signature"}
-
     # 1. Get notification data
     try:
-        data = request.json
+        data = json.loads(request.body)
     except Exception:
+        logger.error("Webhook MP: Erro ao parsear JSON do body.")
         return 400, {"error": "Invalid JSON"}
+
+    # Optional Security: Verify signature if secret is configured
+    webhook_secret = getattr(settings, 'MERCADOPAGO_WEBHOOK_SECRET', None)
+    if webhook_secret and not _verify_mp_signature(request, data, webhook_secret):
+        logger.warning("Webhook MP: Falha na verificação da assinatura.")
+        return 403, {"error": "Invalid signature"}
 
     topic = data.get("type") or data.get("topic")
     resource_id = data.get("data", {}).get("id") or data.get("id")
@@ -573,11 +574,10 @@ def mercadopago_webhook(request):
                         order.status = "CONFIRMED"
                     elif mp_payment_status in ["rejected", "cancelled"]:
                         order.status = "CANCELLED"
-                    # We don't change to PENDING if it's already in another status to avoid race conditions
                     
                     order.save()
-                    print(f"Webhook: Order {order.order_number} updated to {mp_payment_status}")
+                    logger.info(f"Webhook MP: Pedido {order.order_number} atualizado para {mp_payment_status}")
                 except (Order.DoesNotExist, ValueError):
-                    print(f"Webhook: Order with ID {external_reference} not found or invalid.")
+                    logger.error(f"Webhook MP: Pedido com ID {external_reference} não encontrado ou inválido.")
 
     return 200, {"status": "ok"}
