@@ -215,9 +215,13 @@ def checkout_pix(request, payload: OrderPixCreateSchema):
     if shipping_type not in {"PICKUP_STORE", "FREE_DELIVERY_FOZ"}:
         return 400, {"error": "Tipo de frete inválido."}
 
-    if not profile.has_registration_address():
+    if shipping_type == "FREE_DELIVERY_FOZ":
         if not _has_complete_address(payload_address):
-            return 400, {"error": "Endereço de cadastro obrigatório. Preencha CEP, rua, número, bairro, cidade e estado."}
+            return 400, {"error": "Para entrega em Foz do Iguaçu, preencha CEP, rua, número, bairro, cidade e estado."}
+
+        payload_city = _normalize_text(payload_address.get("city"))
+        if payload_city != "foz do iguacu":
+            return 400, {"error": "Entrega grátis disponível apenas para endereços em Foz do Iguaçu. Selecione retirada na loja."}
 
         profile.registration_address_zipcode = payload_address["zipcode"]
         profile.registration_address_street = payload_address["street"]
@@ -228,10 +232,27 @@ def checkout_pix(request, payload: OrderPixCreateSchema):
         profile.registration_address_state = payload_address["state"]
         profile.save()
 
-    if shipping_type == "FREE_DELIVERY_FOZ":
-        registration_city = _normalize_text(profile.registration_address_city)
-        if registration_city != "foz do iguacu":
-            return 400, {"error": "Entrega grátis disponível apenas para endereços em Foz do Iguaçu. Selecione retirada na loja."}
+    order_shipping_address = (
+        {
+            "shipping_address_zipcode": profile.registration_address_zipcode,
+            "shipping_address_street": profile.registration_address_street,
+            "shipping_address_number": profile.registration_address_number,
+            "shipping_address_complement": profile.registration_address_complement,
+            "shipping_address_neighborhood": profile.registration_address_neighborhood,
+            "shipping_address_city": profile.registration_address_city,
+            "shipping_address_state": profile.registration_address_state,
+        }
+        if shipping_type == "FREE_DELIVERY_FOZ"
+        else {
+            "shipping_address_zipcode": None,
+            "shipping_address_street": None,
+            "shipping_address_number": None,
+            "shipping_address_complement": None,
+            "shipping_address_neighborhood": None,
+            "shipping_address_city": None,
+            "shipping_address_state": None,
+        }
+    )
 
     order = Order.objects.create(
         user=user,
@@ -240,13 +261,7 @@ def checkout_pix(request, payload: OrderPixCreateSchema):
         customer_phone=getattr(profile, 'phone', '') or '',
         customer_cpf=clean_cpf,
         shipping_type=shipping_type,
-        shipping_address_zipcode=profile.registration_address_zipcode,
-        shipping_address_street=profile.registration_address_street,
-        shipping_address_number=profile.registration_address_number,
-        shipping_address_complement=profile.registration_address_complement,
-        shipping_address_neighborhood=profile.registration_address_neighborhood,
-        shipping_address_city=profile.registration_address_city,
-        shipping_address_state=profile.registration_address_state,
+        **order_shipping_address,
         status='PENDING'
     )
     
