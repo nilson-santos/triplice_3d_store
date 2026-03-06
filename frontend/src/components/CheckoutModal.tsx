@@ -5,7 +5,15 @@ import type { CreateOrderPayload, CreateOrderPixPayload, OrderPixResponse } from
 import { X, CheckCircle, Smartphone, QrCode, Copy, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const USE_MERCADOPAGO = import.meta.env.VITE_USE_MERCADOPAGO === 'true';
+const parseUseMercadoPago = () => {
+    const rawFlag = import.meta.env.VITE_USE_MERCADOPAGO;
+    if (typeof rawFlag !== 'string' || rawFlag.trim() === '') {
+        return true;
+    }
+    return rawFlag.trim().toLowerCase() === 'true';
+};
+
+const USE_MERCADOPAGO = parseUseMercadoPago();
 
 interface CheckoutModalProps {
     isOpen: boolean;
