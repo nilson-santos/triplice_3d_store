@@ -480,3 +480,54 @@ def get_active_promotion(request):
     if not promo:
         return 404, {"message": "No active promotion found"}
     return promo
+
+@api.post("/webhooks/mercadopago", auth=None)
+def mercadopago_webhook(request):
+    """
+    Handle asynchronous notifications from Mercado Pago.
+    Documentation: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
+    """
+    # 1. Get notification data
+    try:
+        data = request.json
+    except Exception:
+        return 400, {"error": "Invalid JSON"}
+
+    topic = data.get("type") or data.get("topic")
+    resource_id = data.get("data", {}).get("id") or data.get("id")
+
+    if topic == "payment" and resource_id:
+        # 2. Fetch payment details from MP SDK
+        sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
+        payment_info = sdk.payment().get(resource_id)
+        payment = payment_info.get("response")
+
+        if payment and isinstance(payment, dict):
+            external_reference = payment.get("external_reference")
+            mp_payment_status = _normalize_payment_status(payment.get("status"))
+            
+            # 3. Update the corresponding Order
+            if external_reference:
+                try:
+                    # Validating if it's a valid UUID
+                    order_id = UUID(external_reference)
+                    order = Order.objects.get(id=order_id)
+                    
+                    order.payment_status = mp_payment_status
+                    if payment.get("id"):
+                        order.payment_id = str(payment.get("id"))
+                    if payment.get("payment_method_id"):
+                        order.payment_method = str(payment.get("payment_method_id"))
+
+                    if mp_payment_status == "approved":
+                        order.status = "CONFIRMED"
+                    elif mp_payment_status in ["rejected", "cancelled"]:
+                        order.status = "CANCELLED"
+                    # We don't change to PENDING if it's already in another status to avoid race conditions
+                    
+                    order.save()
+                    print(f"Webhook: Order {order.order_number} updated to {mp_payment_status}")
+                except (Order.DoesNotExist, ValueError):
+                    print(f"Webhook: Order with ID {external_reference} not found or invalid.")
+
+    return 200, {"status": "ok"}

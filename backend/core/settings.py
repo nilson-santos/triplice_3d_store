@@ -202,3 +202,7 @@ NINJA_JWT = {
     'TOKEN_USER_CLASS': 'ninja_jwt.models.TokenUser',
     'JTI_CLAIM': 'jti',
 }
+
+# Mercado Pago Configuration
+MERCADOPAGO_ACCESS_TOKEN = os.environ.get('MERCADOPAGO_ACCESS_TOKEN')
+MERCADOPAGO_PUBLIC_KEY = os.environ.get('VITE_MERCADOPAGO_PUBLIC_KEY')
