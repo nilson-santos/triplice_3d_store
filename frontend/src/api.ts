@@ -196,31 +196,31 @@ export interface CartResponse {
 }
 
 export const getCartDB = async (): Promise<CartResponse> => {
-    const res = await api.get<CartResponse>('/store/cart');
+    const res = await api.get<CartResponse>('/cart');
     return res.data;
 };
 
 export const syncCartDB = async (items: Array<{ product_id: number; quantity: number }>): Promise<CartResponse> => {
-    const res = await api.post<CartResponse>('/store/cart/sync', { items });
+    const res = await api.post<CartResponse>('/cart/sync', { items });
     return res.data;
 };
 
 export const addToCartDB = async (productId: number, quantity: number = 1): Promise<CartResponse> => {
-    const res = await api.post<CartResponse>('/store/cart/items', { product_id: productId, quantity });
+    const res = await api.post<CartResponse>('/cart/items', { product_id: productId, quantity });
     return res.data;
 };
 
 export const updateCartItemDB = async (itemId: number, quantity: number): Promise<CartResponse> => {
-    const res = await api.put<CartResponse>(`/store/cart/items/${itemId}`, { quantity });
+    const res = await api.put<CartResponse>(`/cart/items/${itemId}`, { quantity });
     return res.data;
 };
 
 export const removeFromCartDB = async (itemId: number): Promise<CartResponse> => {
-    const res = await api.delete<CartResponse>(`/store/cart/items/${itemId}`);
+    const res = await api.delete<CartResponse>(`/cart/items/${itemId}`);
     return res.data;
 };
 
 export const clearCartDB = async (): Promise<CartResponse> => {
-    const res = await api.delete<CartResponse>('/store/cart');
+    const res = await api.delete<CartResponse>('/cart');
     return res.data;
 };
