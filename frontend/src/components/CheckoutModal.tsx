@@ -4,6 +4,7 @@ import { api, getProfileAddressStatus } from '../api';
 import type { CreateOrderPayload, CreateOrderPixPayload, OrderPixResponse } from '../api';
 import { X, CheckCircle, Smartphone, QrCode, Copy, ShieldCheck, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { AuthForm } from './AuthForm';
 
 const parseUseMercadoPago = () => {
     const rawFlag = import.meta.env.VITE_USE_MERCADOPAGO;
@@ -489,18 +490,8 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
                 {USE_MERCADOPAGO ? (
                     !isAuthenticated ? (
-                        <div className="text-center py-6">
-                            <QrCode className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-lg font-bold mb-2">Faça Login para Pagar com PIX</h3>
-                            <p className="text-gray-600 text-sm mb-6">
-                                É necessário ter uma conta para acompanhar seus pedidos e pagamentos.
-                            </p>
-                            <button
-                                onClick={() => {/* TODO Trigger Login */ }}
-                                className="w-full bg-black text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors"
-                            >
-                                Fazer Login ou Criar Conta
-                            </button>
+                        <div className="py-2">
+                            <AuthForm />
                         </div>
                     ) : (
                         <form
