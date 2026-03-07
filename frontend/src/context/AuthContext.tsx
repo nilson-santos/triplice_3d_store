@@ -93,6 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setToken(newToken);
         setUser(newUser);
+
+        // Dispatch custom event to let CartContext know about the login sync without cyclical dependencies
+        window.dispatchEvent(new Event('auth_login'));
     };
 
     const logout = () => {
@@ -101,6 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setToken(null);
         setUser(null);
+
+        // Dispatch custom event for logout
+        window.dispatchEvent(new Event('auth_logout'));
         // Optionally redirect or clear other states
     };
 

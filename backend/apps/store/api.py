@@ -13,6 +13,7 @@ from django.conf import settings
 from ninja_jwt.authentication import JWTAuth
 import mercadopago
 from apps.users.models import UserProfile
+from .models import Cart, CartItem
 
 api = NinjaAPI()
 
@@ -109,6 +110,16 @@ class OrderStatusSchema(Schema):
 
 class ErrorResponseSchema(Schema):
     error: str
+
+class CartItemResponseSchema(Schema):
+    id: int
+    product: ProductSchema
+    quantity: int
+
+class CartResponseSchema(Schema):
+    id: int
+    items: List[CartItemResponseSchema]
+    total: float
 
 class BannerSchema(ModelSchema):
     image: str | None = None
@@ -596,3 +607,144 @@ def mercadopago_webhook(request):
                     logger.error(f"Webhook MP: Pedido com ID {external_reference} não encontrado ou inválido.")
 
     return 200, {"status": "ok"}
+
+@api.get("/cart", response=CartResponseSchema, auth=JWTAuth())
+def get_cart(request):
+    """
+    Returns the authenticated user's cart.
+    """
+    user = request.user
+    cart, _ = Cart.objects.get_or_create(user=user)
+    
+    total = sum(float(item.product.price) * item.quantity for item in cart.items.all())
+    
+    return {
+        "id": cart.id,
+        "items": [
+            {
+                "id": item.id,
+                "product": item.product,
+                "quantity": item.quantity
+            } for item in cart.items.all()
+        ],
+        "total": total
+    }
+
+class SyncCartItemSchema(Schema):
+    product_id: int
+    quantity: int
+
+class SyncCartRequestSchema(Schema):
+    items: List[SyncCartItemSchema]
+
+@api.post("/cart/sync", response=CartResponseSchema, auth=JWTAuth())
+def sync_cart(request, payload: SyncCartRequestSchema):
+    """
+    Syncs the local storage cart with the user's database cart.
+    Merges quantities if the product already exists.
+    """
+    user = request.user
+    cart, _ = Cart.objects.get_or_create(user=user)
+    
+    for item in payload.items:
+        product = get_object_or_404(Product, id=item.product_id)
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={'quantity': item.quantity}
+        )
+        if not created:
+            # Merge: add local quantity to the DB quantity
+            cart_item.quantity += item.quantity
+            cart_item.save()
+            
+    total = sum(float(item.product.price) * item.quantity for item in cart.items.all())
+    
+    return {
+        "id": cart.id,
+        "items": [
+            {
+                "id": item.id,
+                "product": item.product,
+                "quantity": item.quantity
+            } for item in cart.items.all()
+        ],
+        "total": total
+    }
+
+class AddToCartSchema(Schema):
+    product_id: int
+    quantity: int = 1
+
+@api.post("/cart/items", response=CartResponseSchema, auth=JWTAuth())
+def add_to_cart(request, payload: AddToCartSchema):
+    """
+    Adds a single item to the cart (for logged-in users).
+    """
+    user = request.user
+    cart, _ = Cart.objects.get_or_create(user=user)
+    product = get_object_or_404(Product, id=payload.product_id)
+    
+    cart_item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        defaults={'quantity': payload.quantity}
+    )
+    if not created:
+        cart_item.quantity += payload.quantity
+        cart_item.save()
+        
+    total = sum(float(item.product.price) * item.quantity for item in cart.items.all())
+    return {
+        "id": cart.id,
+        "items": [{"id": i.id, "product": i.product, "quantity": i.quantity} for i in cart.items.all()],
+        "total": total
+    }
+
+class UpdateCartItemSchema(Schema):
+    quantity: int
+
+@api.put("/cart/items/{item_id}", response=CartResponseSchema, auth=JWTAuth())
+def update_cart_item(request, item_id: int, payload: UpdateCartItemSchema):
+    user = request.user
+    cart = get_object_or_404(Cart, user=user)
+    cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
+    
+    if payload.quantity > 0:
+        cart_item.quantity = payload.quantity
+        cart_item.save()
+    else:
+        cart_item.delete()
+        
+    total = sum(float(item.product.price) * item.quantity for item in cart.items.all())
+    return {
+        "id": cart.id,
+        "items": [{"id": i.id, "product": i.product, "quantity": i.quantity} for i in cart.items.all()],
+        "total": total
+    }
+
+@api.delete("/cart/items/{item_id}", response=CartResponseSchema, auth=JWTAuth())
+def remove_from_cart(request, item_id: int):
+    user = request.user
+    cart = get_object_or_404(Cart, user=user)
+    cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
+    cart_item.delete()
+    
+    total = sum(float(item.product.price) * item.quantity for item in cart.items.all())
+    return {
+        "id": cart.id,
+        "items": [{"id": i.id, "product": i.product, "quantity": i.quantity} for i in cart.items.all()],
+        "total": total
+    }
+
+@api.delete("/cart", response=CartResponseSchema, auth=JWTAuth())
+def clear_cart(request):
+    user = request.user
+    cart = get_object_or_404(Cart, user=user)
+    cart.items.all().delete()
+    
+    return {
+        "id": cart.id,
+        "items": [],
+        "total": 0.0
+    }

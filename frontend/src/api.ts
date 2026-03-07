@@ -181,3 +181,45 @@ export const fetchFavorites = async (): Promise<number[]> => {
 export const toggleFavoriteAPI = async (productId: number) => {
     await api.post('/auth/favorites/toggle', { product_id: productId });
 };
+
+export interface CartItemResponse {
+    id: number;
+    product: Product;
+    quantity: number;
+}
+
+export interface CartResponse {
+    id: number;
+    items: CartItemResponse[];
+    total: number;
+}
+
+export const getCartDB = async (): Promise<CartResponse> => {
+    const res = await api.get<CartResponse>('/store/cart');
+    return res.data;
+};
+
+export const syncCartDB = async (items: Array<{ product_id: number; quantity: number }>): Promise<CartResponse> => {
+    const res = await api.post<CartResponse>('/store/cart/sync', { items });
+    return res.data;
+};
+
+export const addToCartDB = async (productId: number, quantity: number = 1): Promise<CartResponse> => {
+    const res = await api.post<CartResponse>('/store/cart/items', { product_id: productId, quantity });
+    return res.data;
+};
+
+export const updateCartItemDB = async (itemId: number, quantity: number): Promise<CartResponse> => {
+    const res = await api.put<CartResponse>(`/store/cart/items/${itemId}`, { quantity });
+    return res.data;
+};
+
+export const removeFromCartDB = async (itemId: number): Promise<CartResponse> => {
+    const res = await api.delete<CartResponse>(`/store/cart/items/${itemId}`);
+    return res.data;
+};
+
+export const clearCartDB = async (): Promise<CartResponse> => {
+    const res = await api.delete<CartResponse>('/store/cart');
+    return res.data;
+};

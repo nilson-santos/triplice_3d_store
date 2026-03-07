@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Order, OrderItem, PromotionalPopup, Banner, Color, ProductImage
+from .models import Category, Product, Order, OrderItem, PromotionalPopup, Banner, Color, ProductImage, Cart, CartItem
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -59,3 +59,14 @@ class BannerAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
     list_editable = ('order', 'is_active')
     search_fields = ('title',)
+
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ('user', 'created_at', 'updated_at')
+    search_fields = ('user__username', 'user__email')
+
+@admin.register(CartItem)
+class CartItemAdmin(admin.ModelAdmin):
+    list_display = ('cart', 'product', 'quantity')
+    list_filter = ('cart',)
+    search_fields = ('product__name', 'cart__user__username')
