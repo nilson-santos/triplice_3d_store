@@ -104,7 +104,7 @@ export const Header = () => {
             next.delete('search');
             return next;
         });
-    }, [setSearchParams]);
+    }, [setSearchParams, location.pathname, navigate]);
 
     const handleCategorySelect = useCallback((categoryId: number | null) => {
         // Limpa a barra de busca visualmente
@@ -254,13 +254,22 @@ export const Header = () => {
                                             Favoritos
                                         </button>
                                         {user?.is_staff && (
-                                            <button
-                                                onClick={() => { setIsUserMenuOpen(false); window.location.href = adminUrl; }}
-                                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-left"
-                                            >
-                                                <Shield size={16} />
-                                                Administração
-                                            </button>
+                                            <>
+                                                <button
+                                                    onClick={() => { setIsUserMenuOpen(false); window.location.href = adminUrl; }}
+                                                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-left"
+                                                >
+                                                    <Shield size={16} />
+                                                    Administração
+                                                </button>
+                                                <button
+                                                    onClick={() => { setIsUserMenuOpen(false); navigate('/admin/price-tags'); }}
+                                                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-left"
+                                                >
+                                                    <Shield size={16} />
+                                                    Etiquetas de Preço
+                                                </button>
+                                            </>
                                         )}
                                         <button
                                             onClick={() => { setIsUserMenuOpen(false); logout(); }}

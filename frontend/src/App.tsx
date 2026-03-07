@@ -10,6 +10,7 @@ import { Favorites } from './pages/Favorites';
 import { ScrollToTop } from './components/ScrollToTop';
 import { PromotionalPopup } from './components/PromotionalPopup';
 import { WhatsAppFAB } from './components/WhatsAppFAB';
+import PriceTags from './pages/PriceTags';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
                 <Route path="/produto/:slug" element={<ProductDetail />} />
                 <Route path="/rastrear-pedido" element={<TrackOrder />} />
                 <Route path="/favoritos" element={<Favorites />} />
+                <Route path="/admin/price-tags" element={<PriceTags />} />
               </Routes>
             </main>
             <Footer />
@@ -37,5 +39,5 @@ function App() {
   );
 }
 
-export default App;
 
+export default App;

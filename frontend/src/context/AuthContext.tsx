@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (storedUser) {
             try {
                 return JSON.parse(storedUser);
-            } catch (e) {
+            } catch {
                 localStorage.removeItem('auth_user');
             }
         }
@@ -46,13 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const ids = await fetchFavorites();
             setFavoriteIds(ids);
-        } catch (error) {
-            console.error('Failed to load favorites', error);
+        } catch (_error) {
+            console.error('Failed to load favorites', _error);
         }
     };
 
     useEffect(() => {
         if (token) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             loadFavorites();
         } else {
             setFavoriteIds([]);
@@ -137,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
     const context = useContext(AuthContext);
     if (context === undefined) {

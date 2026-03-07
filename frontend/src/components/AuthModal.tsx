@@ -56,8 +56,9 @@ export const AuthModal = ({ isOpen, onClose, initialView = 'login' }: AuthModalP
             setSuccess('Enviamos um código de acesso para o seu e-mail.');
             setView('verify-otp');
             setResendTimer(60);
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Erro ao solicitar código. Verifique se a conta existe.');
+        } catch (err) {
+            const error = err as { response?: { data?: { error?: string } } };
+            setError(error.response?.data?.error || 'Erro ao solicitar código. Verifique se a conta existe.');
         } finally {
             setLoading(false);
         }
@@ -72,8 +73,9 @@ export const AuthModal = ({ isOpen, onClose, initialView = 'login' }: AuthModalP
             setSuccess('Conta criada! Enviamos um código de acesso para seu e-mail.');
             setView('verify-otp');
             setResendTimer(60);
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Erro ao registrar.');
+        } catch (err) {
+            const error = err as { response?: { data?: { error?: string } } };
+            setError(error.response?.data?.error || 'Erro ao registrar.');
         } finally {
             setLoading(false);
         }
@@ -87,8 +89,9 @@ export const AuthModal = ({ isOpen, onClose, initialView = 'login' }: AuthModalP
             const res = await api.post('/auth/verify-otp', { email, code: otp });
             login(res.data.access, res.data.user_name, res.data.email_verified, !!res.data.is_staff);
             onClose();
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Código inválido ou expirado.');
+        } catch (err) {
+            const error = err as { response?: { data?: { error?: string } } };
+            setError(error.response?.data?.error || 'Código inválido ou expirado.');
         } finally {
             setLoading(false);
         }

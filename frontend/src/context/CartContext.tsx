@@ -37,41 +37,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return saved ? JSON.parse(saved) : [];
     });
 
-    // Update local storage only if NOT authenticated.
-    // When authenticated, the source of truth is the backend.
-    useEffect(() => {
-        if (!isAuthenticated) {
-            localStorage.setItem('cart', JSON.stringify(items));
-        }
-    }, [items, isAuthenticated]);
-
-    // Fetch the DB cart when authentication state changes to True
-    useEffect(() => {
-        if (isAuthenticated) {
-            loadDbCart();
-        }
-    }, [isAuthenticated]);
-
-    useEffect(() => {
-        const handleLogin = () => {
-            setIsAuthenticated(true);
-            syncCartWithServer();
-        };
-
-        const handleLogout = () => {
-            setIsAuthenticated(false);
-            clearCart();
-        };
-
-        window.addEventListener('auth_login', handleLogin);
-        window.addEventListener('auth_logout', handleLogout);
-
-        return () => {
-            window.removeEventListener('auth_login', handleLogin);
-            window.removeEventListener('auth_logout', handleLogout);
-        };
-    }, []);
-
     const loadDbCart = async () => {
         try {
             const data = await getCartDB();
@@ -115,6 +80,56 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
         localStorage.removeItem('cart');
     };
+
+    const clearCart = async () => {
+        if (isAuthenticated) {
+            try {
+                await clearCartDB();
+                setItems([]);
+            } catch (e) {
+                console.error("Failed to clear DB cart", e);
+            }
+        } else {
+            setItems([]);
+        }
+    };
+
+    // Update local storage only if NOT authenticated.
+    // When authenticated, the source of truth is the backend.
+    useEffect(() => {
+        if (!isAuthenticated) {
+            localStorage.setItem('cart', JSON.stringify(items));
+        }
+    }, [items, isAuthenticated]);
+
+    // Fetch the DB cart when authentication state changes to True
+    useEffect(() => {
+        if (isAuthenticated) {
+            loadDbCart();
+        }
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        const handleLogin = () => {
+            setIsAuthenticated(true);
+            syncCartWithServer();
+        };
+
+        const handleLogout = () => {
+            setIsAuthenticated(false);
+            clearCart();
+        };
+
+        window.addEventListener('auth_login', handleLogin);
+        window.addEventListener('auth_logout', handleLogout);
+
+        return () => {
+            window.removeEventListener('auth_login', handleLogin);
+            window.removeEventListener('auth_logout', handleLogout);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
 
     const addToCart = async (product: Product, quantity: number = 1) => {
         if (isAuthenticated) {
@@ -191,18 +206,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const clearCart = async () => {
-        if (isAuthenticated) {
-            try {
-                await clearCartDB();
-                setItems([]);
-            } catch (e) {
-                console.error("Failed to clear DB cart", e);
-            }
-        } else {
-            setItems([]);
-        }
-    };
 
     const total = items.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
 
@@ -213,6 +216,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCart = () => {
     const context = useContext(CartContext);
     if (!context) throw new Error('useCart must be used within a CartProvider');

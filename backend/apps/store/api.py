@@ -5,8 +5,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from ninja import NinjaAPI, Schema, ModelSchema
+from ninja import NinjaAPI, Schema, ModelSchema, Query
 from django.shortcuts import get_object_or_404
+from django.http import FileResponse
 from .models import Product, Order, OrderItem, Category, Banner, Color, ProductImage
 from uuid import UUID
 from django.conf import settings
@@ -14,6 +15,7 @@ from ninja_jwt.authentication import JWTAuth
 import mercadopago
 from apps.users.models import UserProfile
 from .models import Cart, CartItem
+from .pdf_generator import generate_price_tags_pdf
 
 api = NinjaAPI()
 
@@ -169,6 +171,27 @@ def list_products(request, category_id: int = None, search: str = None, ordering
         qs = qs.order_by('-created_at')
 
     return qs
+
+class GeneratePriceTagsSchema(Schema):
+    product_ids: List[int]
+
+@api.post("/tags/generate-pdf", auth=JWTAuth())
+def generate_price_tags(request, data: GeneratePriceTagsSchema):
+    user = request.user
+    if not user.is_staff:
+        return 403, {"error": "Acesso negado."}
+    
+    if not data.product_ids:
+        return 400, {"error": "Nenhum produto selecionado."}
+
+    products = Product.objects.filter(id__in=data.product_ids, is_active=True).order_by('name')
+    if not products.exists():
+        return 404, {"error": "Produtos não encontrados."}
+
+    pdf_buffer = generate_price_tags_pdf(list(products))
+    
+    response = FileResponse(pdf_buffer, as_attachment=True, filename='etiquetas.pdf')
+    return response
 
 @api.get("/products/{slug}", response=ProductSchema)
 def get_product(request, slug: str):

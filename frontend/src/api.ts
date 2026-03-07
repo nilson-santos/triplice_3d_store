@@ -156,7 +156,7 @@ export const getActivePromotion = async () => {
     try {
         const res = await api.get<PromotionalPopup>('/promotions/active');
         return res.data;
-    } catch (err) {
+    } catch {
         return null; // Return null if 404
     }
 };
@@ -174,6 +174,7 @@ export const getBanners = async (): Promise<Banner[]> => {
 };
 
 export const fetchFavorites = async (): Promise<number[]> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await api.get<any[]>('/auth/favorites');
     return res.data.map(f => f.product_id);
 };
