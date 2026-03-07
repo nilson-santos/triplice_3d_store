@@ -75,6 +75,11 @@ export interface OrderPixResponse {
     payment_status: string | null;
 }
 
+export interface OrderStatusResponse {
+    status: string;
+    payment_status: string | null;
+}
+
 export interface TrackedProduct {
     name: string;
     quantity: number;
@@ -119,6 +124,11 @@ export const regenerateOrderPix = async (orderId: string): Promise<OrderPixRespo
 
 export const getProfileAddressStatus = async (): Promise<ProfileAddressStatus> => {
     const res = await api.get<ProfileAddressStatus>('/auth/profile/address-status');
+    return res.data;
+};
+
+export const getOrderStatus = async (orderId: string): Promise<OrderStatusResponse> => {
+    const res = await api.get<OrderStatusResponse>(`/orders/${orderId}/status`);
     return res.data;
 };
 

@@ -9,23 +9,6 @@ export function PromotionalPopup() {
     const [promo, setPromo] = useState<PromoType | null>(null);
     const [isVisible, setIsVisible] = useState(false);
 
-    useEffect(() => {
-        const fetchPromo = async () => {
-            const data = await getActivePromotion();
-            if (!data) return;
-
-            // Check frequency logic
-            const shouldShow = checkShouldShow(data);
-            if (shouldShow) {
-                setPromo(data);
-                // Small delay for better UX
-                setTimeout(() => setIsVisible(true), 1000);
-            }
-        };
-
-        fetchPromo();
-    }, []);
-
     const checkShouldShow = (data: PromoType) => {
         const storageKey = `${STORAGE_KEY_PREFIX}${data.id}`;
 
@@ -66,6 +49,23 @@ export function PromotionalPopup() {
             localStorage.setItem(storageKey, now);
         }
     };
+
+    useEffect(() => {
+        const fetchPromo = async () => {
+            const data = await getActivePromotion();
+            if (!data) return;
+
+            // Check frequency logic
+            const shouldShow = checkShouldShow(data);
+            if (shouldShow) {
+                setPromo(data);
+                // Small delay for better UX
+                setTimeout(() => setIsVisible(true), 1000);
+            }
+        };
+
+        fetchPromo();
+    }, []);
 
     const handleClose = (e?: React.MouseEvent) => {
         e?.stopPropagation();

@@ -103,6 +103,10 @@ class OrderResponseSchema(Schema):
     qr_code_copia_e_cola: str | None = None
     payment_status: str | None = None
 
+class OrderStatusSchema(Schema):
+    status: str
+    payment_status: str | None
+
 class ErrorResponseSchema(Schema):
     error: str
 
@@ -484,6 +488,17 @@ def get_active_promotion(request):
     if not promo:
         return 404, {"message": "No active promotion found"}
     return promo
+
+@api.get("/orders/{order_id}/status", response=OrderStatusSchema)
+def get_order_status(request, order_id: UUID):
+    """
+    Public (or semi-public) endpoint to check order status for polling.
+    """
+    order = get_object_or_404(Order, id=order_id)
+    return {
+        "status": order.status,
+        "payment_status": _normalize_payment_status(order.payment_status)
+    }
 
 import hmac
 import hashlib
