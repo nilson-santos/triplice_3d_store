@@ -347,7 +347,7 @@ export const Header = () => {
 
                 {/* Categories sub-bar — flat text tabs, horizontally scrollable */}
                 <div className="border-t border-gray-50 bg-white/60 backdrop-blur-sm">
-                    <div className="max-w-7xl mx-auto px-4 flex items-center gap-0 overflow-x-auto scrollbar-hide touch-pan-x">
+                    <div className="max-w-7xl mx-auto px-4 flex items-center gap-0 overflow-x-auto sm:overflow-x-visible scrollbar-hide touch-pan-x sm:justify-center">
                         <button
                             onClick={() => handleCategorySelect(null)}
                             className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${!selectedCategory
