@@ -9,6 +9,7 @@ import {
     clearCartDB
 } from '../api';
 import type { Product } from '../api';
+import { useAuth } from './AuthContext';
 
 export interface CartItem extends Product {
     quantity: number;
@@ -22,17 +23,16 @@ interface CartContextType {
     decreaseQuantity: (productId: number, cartItemId?: number) => Promise<void>;
     clearCart: () => Promise<void>;
     total: number;
-    syncCartWithServer: () => Promise<void>;
-    setIsAuthenticated: (val: boolean) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-    // We start by loading the local cart.
+    const { isAuthenticated } = useAuth();
     const [items, setItems] = useState<CartItem[]>(() => {
+        if (localStorage.getItem('auth_token')) {
+            return [];
+        }
         const saved = localStorage.getItem('cart');
         return saved ? JSON.parse(saved) : [];
     });
@@ -53,34 +53,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const syncCartWithServer = async () => {
-        // Called explicitly right after login logic completes
-        // Takes local cart, pushes to DB, updates state.
-        const localSaved = localStorage.getItem('cart');
-        if (localSaved) {
-            const localItems: CartItem[] = JSON.parse(localSaved);
-            if (localItems.length > 0) {
-                const payload = localItems.map(i => ({ product_id: i.id, quantity: i.quantity }));
-                try {
-                    const data = await syncCartDB(payload);
-                    const mappedItems: CartItem[] = data.items.map(i => ({
-                        ...i.product,
-                        quantity: i.quantity,
-                        cartItemId: i.id
-                    }));
-                    setItems(mappedItems);
-                } catch (error) {
-                    console.error("Failed to sync cart", error);
-                }
-            } else {
-                await loadDbCart(); // If local was empty, just fetch the existing db cart.
-            }
-        } else {
-            await loadDbCart();
-        }
-        localStorage.removeItem('cart');
-    };
-
     const clearCart = async () => {
         if (isAuthenticated) {
             try {
@@ -94,41 +66,60 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // Update local storage only if NOT authenticated.
-    // When authenticated, the source of truth is the backend.
     useEffect(() => {
         if (!isAuthenticated) {
-            localStorage.setItem('cart', JSON.stringify(items));
+            if (items.length > 0) {
+                localStorage.setItem('cart', JSON.stringify(items));
+            } else {
+                localStorage.removeItem('cart');
+            }
         }
     }, [items, isAuthenticated]);
 
-    // Fetch the DB cart when authentication state changes to True
     useEffect(() => {
-        if (isAuthenticated) {
-            loadDbCart();
-        }
-    }, [isAuthenticated]);
+        let isMounted = true;
 
-    useEffect(() => {
-        const handleLogin = () => {
-            setIsAuthenticated(true);
-            syncCartWithServer();
+        const hydrateCart = async () => {
+            if (isAuthenticated) {
+                const localSaved = localStorage.getItem('cart');
+
+                if (localSaved) {
+                    const localItems: CartItem[] = JSON.parse(localSaved);
+                    if (localItems.length > 0) {
+                        const payload = localItems.map(item => ({ product_id: item.id, quantity: item.quantity }));
+                        try {
+                            const data = await syncCartDB(payload);
+                            if (isMounted) {
+                                setItems(data.items.map(item => ({
+                                    ...item.product,
+                                    quantity: item.quantity,
+                                    cartItemId: item.id
+                                })));
+                            }
+                            localStorage.removeItem('cart');
+                        } catch (error) {
+                            console.error("Failed to sync cart", error);
+                        }
+                        return;
+                    }
+                }
+
+                await loadDbCart();
+                return;
+            }
+
+            localStorage.removeItem('cart');
+            if (isMounted) {
+                setItems([]);
+            }
         };
 
-        const handleLogout = () => {
-            setIsAuthenticated(false);
-            clearCart();
-        };
-
-        window.addEventListener('auth_login', handleLogin);
-        window.addEventListener('auth_logout', handleLogout);
+        void hydrateCart();
 
         return () => {
-            window.removeEventListener('auth_login', handleLogin);
-            window.removeEventListener('auth_logout', handleLogout);
+            isMounted = false;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [isAuthenticated]);
 
 
     const addToCart = async (product: Product, quantity: number = 1) => {
@@ -210,7 +201,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const total = items.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
 
     return (
-        <CartContext.Provider value={{ items, addToCart, removeFromCart, decreaseQuantity, clearCart, total, syncCartWithServer, setIsAuthenticated }}>
+        <CartContext.Provider value={{ items, addToCart, removeFromCart, decreaseQuantity, clearCart, total }}>
             {children}
         </CartContext.Provider>
     );
