@@ -44,6 +44,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ('order_display', 'customer_name', 'shipping_type', 'status', 'created_at')
     list_filter = ('shipping_type', 'status', 'created_at')
     search_fields = ('customer_name', 'id')
+    ordering = ['-created_at']
     inlines = [OrderItemInline]
     readonly_fields = ('id', 'created_at', 'shipping_type')
 
