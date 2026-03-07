@@ -32,8 +32,8 @@ const PriceTags: React.FC = () => {
                 api.get('/products', {
                     params: {
                         category_id: selectedCategory || undefined,
-                        name__icontains: searchTerm || undefined, // Adjust if your API takes `search` param
-                        limit: 50 // Note: API is paginated. You might want to remove pagination or load more if needed
+                        search: searchTerm || undefined,
+                        limit: 100 // Load more to fit the use case
                     }
                 }),
                 api.get('/categories')
@@ -115,8 +115,8 @@ const PriceTags: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gerar Etiquetas</h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-2">
+                    <h1 className="text-3xl font-bold text-gray-900 ">Gerar Etiquetas</h1>
+                    <p className="text-gray-500  mt-2">
                         Selecione os produtos para gerar etiquetas PDF (53mm).
                     </p>
                 </div>
@@ -131,12 +131,12 @@ const PriceTags: React.FC = () => {
             </div>
 
             {error && (
-                <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                <div className="mb-6 p-4 bg-red-100  text-red-600  rounded-lg">
                     {error}
                 </div>
             )}
 
-            <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden p-6 mb-6">
+            <div className="bg-white  rounded-xl shadow-sm border border-gray-100  overflow-hidden p-6 mb-6">
                 <div className="flex flex-col md:flex-row gap-4">
                     <div className="flex-1 relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -145,13 +145,13 @@ const PriceTags: React.FC = () => {
                             placeholder="Buscar por nome..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-dark-border rounded-lg bg-gray-50 dark:bg-dark-bg focus:ring-2 focus:ring-blue-500"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200  rounded-lg bg-gray-50  focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
                     <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="w-full md:w-64 px-4 py-2 border border-gray-200 dark:border-dark-border rounded-lg bg-gray-50 dark:bg-dark-bg"
+                        className="w-full md:w-64 px-4 py-2 border border-gray-200  rounded-lg bg-gray-50 "
                     >
                         <option value="">Todas as Categorias</option>
                         {categories.map(cat => (
@@ -161,19 +161,19 @@ const PriceTags: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden">
+            <div className="bg-white  rounded-xl shadow-sm border border-gray-100  overflow-hidden">
                 {loading ? (
                     <div className="flex justify-center items-center p-12">
                         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                     </div>
                 ) : products.length === 0 ? (
-                    <div className="text-center p-12 text-gray-500 dark:text-gray-400">
+                    <div className="text-center p-12 text-gray-500 ">
                         Nenhum produto encontrado.
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="bg-gray-50 dark:bg-dark-bg border-b border-gray-200 dark:border-dark-border">
+                            <thead className="bg-gray-50  border-b border-gray-200 ">
                                 <tr>
                                     <th className="px-6 py-4">
                                         <input
@@ -183,16 +183,16 @@ const PriceTags: React.FC = () => {
                                             className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                                         />
                                     </th>
-                                    <th className="px-6 py-4 font-medium text-gray-900 dark:text-gray-200">Produto</th>
-                                    <th className="px-6 py-4 font-medium text-gray-900 dark:text-gray-200">Preço</th>
-                                    <th className="px-6 py-4 font-medium text-gray-900 dark:text-gray-200">ID</th>
+                                    <th className="px-6 py-4 font-medium text-gray-900 ">Produto</th>
+                                    <th className="px-6 py-4 font-medium text-gray-900 ">Preço</th>
+                                    <th className="px-6 py-4 font-medium text-gray-900 ">ID</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-dark-border">
+                            <tbody className="divide-y divide-gray-100 ">
                                 {products.map(product => (
                                     <tr
                                         key={product.id}
-                                        className="hover:bg-gray-50 dark:hover:bg-dark-bg/50 cursor-pointer"
+                                        className="hover:bg-gray-50  cursor-pointer"
                                         onClick={() => toggleSelection(product.id)}
                                     >
                                         <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
@@ -212,15 +212,15 @@ const PriceTags: React.FC = () => {
                                                         className="w-10 h-10 rounded object-cover"
                                                     />
                                                 )}
-                                                <span className="font-medium text-gray-900 dark:text-white">
+                                                <span className="font-bold text-gray-900 ">
                                                     {product.name}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
+                                        <td className="px-6 py-4 font-bold text-gray-900 ">
                                             R$ {Number(product.price).toFixed(2).replace('.', ',')}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                                        <td className="px-6 py-4 text-gray-500 ">
                                             #{product.id}
                                         </td>
                                     </tr>

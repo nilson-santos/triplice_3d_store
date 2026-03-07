@@ -8,7 +8,7 @@ from reportlab.lib.colors import black
 import os
 from django.conf import settings
 
-# Tag dimensions
+# Tag dimensions - Physical layout: 2 columns of 25mm wide, 30mm tall
 TAG_WIDTH = 25 * mm
 TAG_HEIGHT = 30 * mm
 PAGE_WIDTH = 53 * mm
@@ -62,24 +62,46 @@ def _draw_tag(c, x, y, product):
     """
     Draws a single price tag at the given (x,y) top-left coordinates.
     Tag size is 25mm width x 30mm height.
+    The text is rotated 90 degrees to use the height as the writing width.
     """
-    # 1. Fill solid white background (thermal printers use white paper, but good for bounding)
-    # Actually, we don't need to draw white background since paper is white, 
-    # but we can optionally draw a very subtle border for cutting/reference if needed.
+    # Save graphics state so transformations are isolated to this tag
+    c.saveState()
     
-    # Text coordinates
+    # To rotate text around the tag so it runs along the 30mm height:
+    # 1. Translate the origin to the bottom-left of the original tag's bounding box
+    c.translate(x, y - TAG_HEIGHT)
+    
+    # 2. Rotate 90 degrees clockwise (which is -90 in reportlab)
+    # Actually wait: standard Math degrees. -90 degrees CCW (or 270) means 
+    # original X+ (right) points down (screen -Y), and Y+ (up) points right (screen X+).
+    # Wait, in reportlab, Y goes UP normally. 
+    # If we translate to bottom-left (x, y - TAG_HEIGHT):
+    # - Rotate -90 degrees:
+    # New X+ points DOWN along the old right edge.
+    # New Y+ points RIGHT along the old bottom edge.
+    # But we want text to flow left-to-right (horizontally) from the perspective of the *rotated* label.
+    # Let's translate to Top-Left and rotate -90:
+    c.translate(0, TAG_HEIGHT)
+    c.rotate(-90)
+    
+    # Now the canvas origin is at the top-left of the original tag.
+    # +X axis points DOWN the tag. (Available space: 30mm)
+    # +Y axis points RIGHT across the tag. (Available space: 25mm)
+    # Note: Text draws relative to baseline, so if +Y is RIGHT, the text baseline travels RIGHT, 
+    # meaning the top of the text is facing LEFT (the old top edge). 
+    # This means the text flows from Top-to-Bottom of the tag, and reads Top-to-Bottom!
+    
+    ROT_WIDTH = 30 * mm
+    ROT_HEIGHT = 25 * mm
+    
     padding = 2 * mm
-    
-    # Start drawing from the top of the tag downwards
     c.setFillColor(black)
     
-    # Product Name (bold-ish)
-    c.setFont("Helvetica-Bold", 8)
+    # ======= PRODUCT NAME =======
+    c.setFont("Helvetica-Bold", 11)
     
-    # Ensure text fits on max 3 lines roughly
     name = product.name
-    # Very crude text wrap/truncation
-    max_chars_per_line = 16
+    max_chars_per_line = 14
     lines = []
     
     if len(name) <= max_chars_per_line:
@@ -97,30 +119,26 @@ def _draw_tag(c, x, y, product):
         if current_line:
             lines.append(current_line.strip())
             
-    # Draw max 3 lines
-    text_y = y - padding - 3*mm
+    # Draw max 3 lines centered or padded
+    # Top of rotated text area is Y = ROT_HEIGHT (25mm) - padding
+    text_y = ROT_HEIGHT - padding - 4 * mm
     for i, line in enumerate(lines[:3]):
         if i == 2 and len(lines) > 3:
-            # Add ellipsis if truncated
-            c.drawString(x + padding, text_y, line[:max_chars_per_line-3] + "...")
+            c.drawString(padding, text_y, line[:max_chars_per_line-3] + "...")
         else:
-            c.drawString(x + padding, text_y, line)
-        text_y -= 3.5 * mm
+            c.drawString(padding, text_y, line)
+        text_y -= 5 * mm
 
-    # Product Price
-    c.setFont("Helvetica-Bold", 12)
-    # Format price to BRL format gently: "R$ 1.000,00" or just standard formatted
+    # ======= PRODUCT PRICE =======
+    c.setFont("Helvetica-Bold", 15)
     try:
         price_val = float(product.price)
         price_str = f"R$ {price_val:,.2f}".replace(",", "v").replace(".", ",").replace("v", ".")
     except:
         price_str = f"R$ {product.price}"
         
-    # Draw price near bottom of tag
-    price_y = y - TAG_HEIGHT + padding + 2*mm
-    c.drawString(x + padding, price_y, price_str)
-    
-    # Optional barcode/SKU area (just draw SKU if available, or just blank)
-    c.setFont("Helvetica", 6)
-    sku_text = f"Cod: {product.id}"
-    c.drawString(x + padding, price_y - 2.5*mm, sku_text)
+    # Draw price near bottom of rotated tag (Y = padding)
+    price_y = padding + 1 * mm
+    c.drawString(padding, price_y, price_str)
+
+    c.restoreState()
