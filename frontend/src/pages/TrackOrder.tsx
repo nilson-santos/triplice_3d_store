@@ -167,10 +167,6 @@ export const TrackOrder = () => {
                                                     {pixLoadingOrderId === order.id ? 'Gerando QR Code...' : 'Gerar QR Code Novamente'}
                                                 </button>
                                             )}
-                                            <div className="flex items-start gap-3 text-sm text-gray-600 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                                                <MapPin size={24} className="text-blue-500 flex-shrink-0" />
-                                                <p>Por questões de privacidade (LGPD), os detalhes do seu endereço de entrega e documentos estão protegidos e não são exibidos nesta tela pública.</p>
-                                            </div>
                                         </div>
                                     </div>
                                 )}
