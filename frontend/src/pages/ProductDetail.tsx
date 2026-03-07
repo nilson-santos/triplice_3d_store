@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ShoppingCart, Check, PaintBucket, Ruler, Heart } from 'lucide-react';
+import { ChevronLeft, ShoppingCart, PaintBucket, Ruler, Heart } from 'lucide-react';
 import { api, getColors } from '../api';
 import type { Product, Color } from '../api';
 import { useCart } from '../context/CartContext';
@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 export const ProductDetail = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
-    const { addToCart, items } = useCart();
+    const { addToCart } = useCart();
 
     // We will still track if it's in the cart. 
     // Ideally cart items would also track selected color, but for simplicity we keep the existing CartItem shape for now.
@@ -24,7 +24,6 @@ export const ProductDetail = () => {
     const [globalColors, setGlobalColors] = useState<Color[]>([]);
 
     const { favoriteIds, toggleFav } = useAuth();
-    const isInCart = product ? items.some(item => item.id === product.id) : false;
     const isFavorite = product ? favoriteIds.includes(product.id) : false;
 
     useEffect(() => {
@@ -52,8 +51,7 @@ export const ProductDetail = () => {
     }, [slug]);
 
     const handleAddToCart = () => {
-        if (product && !isInCart) {
-            // Ideally attach selectedColor info to the item in a real app
+        if (product) {
             addToCart(product, quantity);
         }
     };
@@ -215,40 +213,28 @@ export const ProductDetail = () => {
                     )}
 
                     <div className="mt-auto pt-8 md:pt-4 flex gap-3 md:gap-2 w-full">
-                        {!isInCart && (
-                            <div className="flex items-center justify-between border border-gray-200 rounded-2xl md:rounded-xl px-2 sm:px-4 py-3 sm:py-0 md:py-2 w-[45%] sm:w-1/3 shrink-0">
-                                <button
-                                    onClick={() => handleQuantityChange(-1)}
-                                    className="text-gray-500 hover:text-black font-semibold text-lg md:text-base px-2"
-                                >
-                                    -
-                                </button>
-                                <span className="font-semibold text-lg md:text-base">{quantity}</span>
-                                <button
-                                    onClick={() => handleQuantityChange(1)}
-                                    className="text-gray-500 hover:text-black font-semibold text-lg md:text-base px-2"
-                                >
-                                    +
-                                </button>
-                            </div>
-                        )}
+                        <div className="flex items-center justify-between border border-gray-200 rounded-2xl md:rounded-xl px-2 sm:px-4 py-3 sm:py-0 md:py-2 w-[45%] sm:w-1/3 shrink-0">
+                            <button
+                                onClick={() => handleQuantityChange(-1)}
+                                className="text-gray-500 hover:text-black font-semibold text-lg md:text-base px-2"
+                            >
+                                -
+                            </button>
+                            <span className="font-semibold text-lg md:text-base">{quantity}</span>
+                            <button
+                                onClick={() => handleQuantityChange(1)}
+                                className="text-gray-500 hover:text-black font-semibold text-lg md:text-base px-2"
+                            >
+                                +
+                            </button>
+                        </div>
                         <button
                             onClick={handleAddToCart}
-                            disabled={isInCart}
-                            className={`flex-1 py-3 sm:py-4 md:py-3 px-2 sm:px-6 md:px-4 rounded-2xl md:rounded-xl flex items-center justify-center gap-2 text-[13px] sm:text-lg md:text-sm font-semibold transition-all duration-300 ${isInCart
-                                ? 'bg-green-500 text-white cursor-default'
-                                : 'bg-black text-white hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98]'
-                                }`}
+                            className="flex-1 py-3 sm:py-4 md:py-3 px-2 sm:px-6 md:px-4 rounded-2xl md:rounded-xl flex items-center justify-center gap-2 text-[13px] sm:text-lg md:text-sm font-semibold transition-all duration-300 bg-black text-white hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98]"
                         >
-                            {isInCart ? (
-                                <>
-                                    <Check size={20} className="sm:w-6 sm:h-6 md:w-5 md:h-5" /> <span className="hidden sm:inline">Adicionado ao Carrinho</span><span className="sm:hidden">Adicionado</span>
-                                </>
-                            ) : (
-                                <>
-                                    <ShoppingCart size={20} className="sm:w-6 sm:h-6 md:w-5 md:h-5" /> Comprar
-                                </>
-                            )}
+                            <>
+                                <ShoppingCart size={20} className="sm:w-6 sm:h-6 md:w-5 md:h-5" /> Adicionar ao Carrinho
+                            </>
                         </button>
                     </div>
                 </div>

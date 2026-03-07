@@ -23,12 +23,14 @@ interface CartContextType {
     decreaseQuantity: (productId: number, cartItemId?: number) => Promise<void>;
     clearCart: () => Promise<void>;
     total: number;
+    isSyncing: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
     const { isAuthenticated } = useAuth();
+    const [isSyncing, setIsSyncing] = useState(false);
     const [items, setItems] = useState<CartItem[]>(() => {
         if (localStorage.getItem('auth_token')) {
             return [];
@@ -50,6 +52,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             localStorage.removeItem('cart');
         } catch (error) {
             console.error("Failed to load DB cart", error);
+        } finally {
+            setIsSyncing(false);
         }
     };
 
@@ -81,6 +85,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
         const hydrateCart = async () => {
             if (isAuthenticated) {
+                if (isMounted) {
+                    setIsSyncing(true);
+                }
                 const localSaved = localStorage.getItem('cart');
 
                 if (localSaved) {
@@ -99,18 +106,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                             localStorage.removeItem('cart');
                         } catch (error) {
                             console.error("Failed to sync cart", error);
+                        } finally {
+                            if (isMounted) {
+                                setIsSyncing(false);
+                            }
                         }
                         return;
                     }
                 }
 
                 await loadDbCart();
+                if (isMounted) {
+                    setIsSyncing(false);
+                }
                 return;
             }
 
             localStorage.removeItem('cart');
             if (isMounted) {
                 setItems([]);
+                setIsSyncing(false);
             }
         };
 
@@ -201,7 +216,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const total = items.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
 
     return (
-        <CartContext.Provider value={{ items, addToCart, removeFromCart, decreaseQuantity, clearCart, total }}>
+        <CartContext.Provider value={{ items, addToCart, removeFromCart, decreaseQuantity, clearCart, total, isSyncing }}>
             {children}
         </CartContext.Provider>
     );

@@ -46,7 +46,7 @@ interface CheckoutModalProps {
 }
 
 export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
-    const { items, total, clearCart } = useCart();
+    const { items, total, clearCart, isSyncing } = useCart();
     const { isAuthenticated, user } = useAuth();
     const [cpf, setCpf] = useState('');
     const [name, setName] = useState('');
@@ -184,6 +184,19 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
     if (!isOpen) return null;
 
+    if (isSyncing) {
+        return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl">
+                    <h2 className="text-2xl font-bold mb-2">Sincronizando carrinho</h2>
+                    <p className="text-gray-600">
+                        Aguarde um instante enquanto carregamos os itens mais recentes da sua conta.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     const handleCopyPix = () => {
         if (successData?.qr_code_copia_e_cola) {
             navigator.clipboard.writeText(successData.qr_code_copia_e_cola);
@@ -194,6 +207,14 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
     const handleSubmitManual = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSyncing) {
+            alert('Aguarde a sincronização do carrinho terminar.');
+            return;
+        }
+        if (items.length === 0) {
+            alert('Seu carrinho está vazio.');
+            return;
+        }
         setLoading(true);
 
         const payload: CreateOrderPayload = {
@@ -208,7 +229,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         try {
             const response = await api.post('/orders', payload);
             setManualSuccessData(response.data);
-            clearCart();
+            await clearCart();
         } catch (err) {
             console.error('Failed to create order', err);
             alert('Erro ao criar pedido. Tente novamente.');
@@ -219,6 +240,14 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
     const handleSubmitPix = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSyncing) {
+            alert('Aguarde a sincronização do carrinho terminar.');
+            return;
+        }
+        if (items.length === 0) {
+            alert('Seu carrinho está vazio.');
+            return;
+        }
         if (shippingType === 'FREE_DELIVERY_FOZ' && !requiredRegistrationAddressFilled) {
             alert('Preencha o endereço de cadastro completo para continuar.');
             return;
@@ -259,7 +288,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         try {
             const response = await api.post('/checkout/pix', payload);
             setSuccessData(response.data);
-            clearCart();
+            await clearCart();
         } catch (error: unknown) {
             console.error('Failed to process PIX order', error);
             const err = error as { response?: { status?: number, data?: { error?: string } } };

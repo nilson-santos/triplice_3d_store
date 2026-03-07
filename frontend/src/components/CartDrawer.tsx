@@ -86,7 +86,7 @@ export const CartDrawer = ({ onClose }: CartDrawerProps) => {
                                     <div className="flex justify-between items-start">
                                         <h3 className="font-semibold">{item.name}</h3>
                                         <button
-                                            onClick={() => removeFromCart(item.id)}
+                                            onClick={() => removeFromCart(item.id, item.cartItemId)}
                                             className="text-red-500 hover:text-red-700"
                                         >
                                             <Trash2 size={18} />
@@ -97,7 +97,7 @@ export const CartDrawer = ({ onClose }: CartDrawerProps) => {
                                     <div className="flex items-center gap-3 mt-2">
                                         <button
                                             className="w-8 h-8 flex items-center justify-center border rounded-full hover:bg-gray-50"
-                                            onClick={() => decreaseQuantity(item.id)}
+                                            onClick={() => decreaseQuantity(item.id, item.cartItemId)}
                                         >
                                             <Minus size={16} />
                                         </button>
