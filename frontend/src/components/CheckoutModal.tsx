@@ -566,7 +566,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Complemento (Opcional)</label>
                                                 <input
                                                     type="text"
                                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
