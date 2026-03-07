@@ -67,6 +67,12 @@ def _draw_tag(c, x, y, product):
     # Save graphics state so transformations are isolated to this tag
     c.saveState()
     
+    # Draw cut line (bounding box) around the tag
+    c.setLineWidth(0.5)
+    c.setDash(2, 2)
+    c.setStrokeColor(black)
+    c.rect(x, y - TAG_HEIGHT, TAG_WIDTH, TAG_HEIGHT)
+    
     # To rotate text around the tag so it runs along the 30mm height:
     # 1. Translate the origin to the bottom-left of the original tag's bounding box
     c.translate(x, y - TAG_HEIGHT)
