@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import {
     getCartDB,
@@ -31,6 +31,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider = ({ children }: { children: ReactNode }) => {
     const { isAuthenticated } = useAuth();
     const [isSyncing, setIsSyncing] = useState(false);
+    const syncPromiseRef = useRef<Promise<void> | null>(null);
     const [items, setItems] = useState<CartItem[]>(() => {
         if (localStorage.getItem('auth_token')) {
             return [];
@@ -58,6 +59,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const clearCart = async () => {
+        if (syncPromiseRef.current) {
+            await syncPromiseRef.current;
+        }
         if (isAuthenticated) {
             try {
                 await clearCartDB();
@@ -129,7 +133,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
-        void hydrateCart();
+        const syncPromise = hydrateCart();
+        syncPromiseRef.current = syncPromise;
+        void syncPromise.finally(() => {
+            if (syncPromiseRef.current === syncPromise) {
+                syncPromiseRef.current = null;
+            }
+        });
 
         return () => {
             isMounted = false;
@@ -139,6 +149,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     const addToCart = async (product: Product, quantity: number = 1) => {
         if (isAuthenticated) {
+            if (syncPromiseRef.current) {
+                await syncPromiseRef.current;
+            }
             try {
                 const data = await addToCartDB(product.id, quantity);
                 setItems(data.items.map(i => ({
@@ -162,6 +175,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     const removeFromCart = async (productId: number, cartItemId?: number) => {
         if (isAuthenticated && cartItemId) {
+            if (syncPromiseRef.current) {
+                await syncPromiseRef.current;
+            }
             try {
                 const data = await removeFromCartDB(cartItemId);
                 setItems(data.items.map(i => ({
@@ -179,6 +195,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     const decreaseQuantity = async (productId: number, cartItemId?: number) => {
         if (isAuthenticated && cartItemId) {
+            if (syncPromiseRef.current) {
+                await syncPromiseRef.current;
+            }
             const existing = items.find(i => i.id === productId);
             if (existing) {
                 try {
