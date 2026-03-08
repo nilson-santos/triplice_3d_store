@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ShoppingCart, PaintBucket, Ruler, Heart } from 'lucide-react';
+import { ChevronLeft, ShoppingCart, PaintBucket, Ruler, Heart, Share2 } from 'lucide-react';
 import { api, getColors } from '../api';
 import type { Product, Color } from '../api';
 import { useCart } from '../context/CartContext';
@@ -161,13 +161,39 @@ export const ProductDetail = () => {
 
                     <div className="mt-1 md:mt-2 border-b border-gray-100 pb-4 md:pb-4 flex justify-between items-center">
                         <span className="text-2xl md:text-2xl font-bold text-black">R$ {product.price}</span>
-                        <button
-                            onClick={() => toggleFav(product.id)}
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center -mr-2"
-                            aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                        >
-                            <Heart size={24} className={`transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 hover:text-gray-600'}`} />
-                        </button>
+                        <div className="flex items-center gap-1 -mr-2">
+                            <button
+                                onClick={async () => {
+                                    const shareData = {
+                                        title: product.name,
+                                        text: `Confira ${product.name} na Tríplice 3D!`,
+                                        url: window.location.href
+                                    };
+                                    try {
+                                        if (navigator.share) {
+                                            await navigator.share(shareData);
+                                        } else {
+                                            await navigator.clipboard.writeText(window.location.href);
+                                            alert("Link copiado para a área de transferência!");
+                                        }
+                                    } catch (err) {
+                                        console.error("Erro ao compartilhar", err);
+                                    }
+                                }}
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center text-gray-400 hover:text-gray-600"
+                                aria-label="Compartilhar produto"
+                                title="Compartilhar"
+                            >
+                                <Share2 size={24} />
+                            </button>
+                            <button
+                                onClick={() => toggleFav(product.id)}
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center"
+                                aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                            >
+                                <Heart size={24} className={`transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 hover:text-gray-600'}`} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Product Size */}

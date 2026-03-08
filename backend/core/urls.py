@@ -29,9 +29,12 @@ admin.site.site_url = "https://triplice3d.com.br/"
 
 api.add_router('/auth/', users_router)
 
+from apps.store.views import seo_product_view
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', api.urls),
+    path('seo/produto/<slug:slug>/', seo_product_view, name='seo_product'),
 ]
 
 if settings.DEBUG:
