@@ -65,8 +65,8 @@ services:
       backend:
         condition: service_healthy
     volumes:
-      - media:/backend/media
-      - staticfiles:/backend/staticfiles
+      - media:/app/media
+      - staticfiles:/app/staticfiles
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:80" ]
       interval: 30s

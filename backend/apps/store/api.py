@@ -17,7 +17,7 @@ from apps.users.models import UserProfile
 from .models import Cart, CartItem
 from .pdf_generator import generate_price_tags_pdf
 
-api = NinjaAPI()
+api = NinjaAPI(docs_url="/docs" if settings.DEBUG else None)
 
 # Schemas
 class CategorySchema(ModelSchema):
