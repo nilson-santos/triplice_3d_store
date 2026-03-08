@@ -37,7 +37,7 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     def order_display(self, obj):
-        return f"#{obj.order_number}"
+        return f"{obj.order_number}"
 
     order_display.short_description = "Pedido"
     
