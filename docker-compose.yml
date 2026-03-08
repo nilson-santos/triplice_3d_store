@@ -24,6 +24,7 @@ services:
     volumes:
       - ./backend:/app
       - media:/backend/media
+      - staticfiles:/backend/staticfiles
     #    ports:
     #      - "8000:8000"
     env_file:
@@ -50,20 +51,6 @@ services:
       - front-end
       - back-end
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=front-end"
-      # HTTPS router
-      - "traefik.http.routers.triplice-backend.rule=Host(`api.triplice3d.com.br`)"
-      - "traefik.http.routers.triplice-backend.entrypoints=websecure"
-      - "traefik.http.routers.triplice-backend.tls.certresolver=myresolver"
-      - "traefik.http.services.triplice-backend.loadbalancer.server.port=8000"
-      # HTTP → HTTPS redirect
-      - "traefik.http.routers.triplice-backend-http.rule=Host(`api.triplice3d.com.br`)"
-      - "traefik.http.routers.triplice-backend-http.entrypoints=web"
-      - "traefik.http.routers.triplice-backend-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
 
   frontend:
     build:
@@ -77,6 +64,9 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    volumes:
+      - media:/backend/media
+      - staticfiles:/backend/staticfiles
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:80" ]
       interval: 30s
@@ -90,12 +80,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=front-end"
-      # HTTPS router
+      # HTTPS router for frontend
       - "traefik.http.routers.triplice-frontend.rule=Host(`triplice3d.com.br`)"
       - "traefik.http.routers.triplice-frontend.entrypoints=websecure"
       - "traefik.http.routers.triplice-frontend.tls.certresolver=myresolver"
       - "traefik.http.services.triplice-frontend.loadbalancer.server.port=80"
-      # HTTP → HTTPS redirect
+      # HTTP -> HTTPS redirect for frontend
       - "traefik.http.routers.triplice-frontend-http.rule=Host(`triplice3d.com.br`)"
       - "traefik.http.routers.triplice-frontend-http.entrypoints=web"
       - "traefik.http.routers.triplice-frontend-http.middlewares=redirect-to-https"
@@ -109,3 +99,4 @@ networks:
 volumes:
   postgres_data:
   media:
+  staticfiles:
