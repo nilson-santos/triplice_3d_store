@@ -24,7 +24,7 @@ export const Header = () => {
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
-    const adminUrl = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://api.triplice3d.com.br/api')).replace(/\/api\/?$/, '/admin/');
+    const adminUrl = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://triplice3d.com.br/api')).replace(/\/api\/?$/, '/admin/');
 
     const selectedCategory = searchParams.get('category');
 
