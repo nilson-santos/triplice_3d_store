@@ -378,11 +378,44 @@ def regenerate_checkout_pix(request, order_id: UUID):
     user = request.user
     order = get_object_or_404(Order, id=order_id, user=user)
 
+    sdk = mercadopago.SDK(getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', ''))
+
+    # Verifica se já existe um pagamento e se ele ainda está pendente ou válido
+    if order.payment_id:
+        existing_payment_info = sdk.payment().get(order.payment_id)
+        existing_payment = existing_payment_info.get("response")
+        
+        if isinstance(existing_payment, dict):
+            mp_status = _normalize_payment_status(existing_payment.get("status"))
+            
+            if mp_status == "pending":
+                from django.utils.dateparse import parse_datetime
+                from django.utils import timezone
+                
+                expiration_str = existing_payment.get("date_of_expiration")
+                is_valid = True
+                if expiration_str:
+                    expiration_date = parse_datetime(expiration_str)
+                    if expiration_date and expiration_date <= timezone.now():
+                        is_valid = False
+                
+                if is_valid:
+                    qr_code_base64, qr_code_copia_e_cola = _extract_qr_data(existing_payment)
+                    # Se as credenciais do QR code existem, retornamos elas e não geramos um novo
+                    if qr_code_base64 and qr_code_copia_e_cola:
+                        return {
+                            "id": order.id,
+                            "order_number": order.order_number,
+                            "qr_code_base64": qr_code_base64,
+                            "qr_code_copia_e_cola": qr_code_copia_e_cola,
+                            "payment_status": mp_status
+                        }
+
+    # Caso não exista ou não esteja mais pendente/válido, geramos um novo pagamento PIX
     total_price = 0.0
     for item in order.items.all():
         total_price += float(item.price_at_time) * item.quantity
 
-    sdk = mercadopago.SDK(getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', ''))
     clean_cpf = ''.join(filter(str.isdigit, order.customer_cpf or ''))
 
     payment_data = {
