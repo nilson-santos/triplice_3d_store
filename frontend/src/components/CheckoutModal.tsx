@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { api, getProfileAddressStatus } from '../api';
 import type { CreateOrderPayload, CreateOrderPixPayload, OrderPixResponse } from '../api';
-import { X, CheckCircle, Smartphone, QrCode, Copy, ShieldCheck, Clock } from 'lucide-react';
+import { X, CheckCircle, Smartphone, QrCode, Copy, ShieldCheck, Clock, Truck, MapPin, Fingerprint } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthForm } from './AuthForm';
 
@@ -47,7 +47,7 @@ interface CheckoutModalProps {
 
 export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     const { items, total, clearCart, isSyncing } = useCart();
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated } = useAuth();
     const [cpf, setCpf] = useState('');
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -65,6 +65,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     const [loading, setLoading] = useState(false);
     const [successData, setSuccessData] = useState<OrderPixResponse | null>(null);
     const [manualSuccessData, setManualSuccessData] = useState<{ id: string; order_number: string; whatsapp_url: string } | null>(null);
+    const [orderTotal, setOrderTotal] = useState<number | null>(null);
 
     const [copied, setCopied] = useState(false);
     const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
@@ -85,9 +86,6 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
             .replace(/[\u0300-\u036f]/g, '')
             .trim()
             .toLowerCase();
-
-    const totalPixSteps = shippingType === 'FREE_DELIVERY_FOZ' ? 3 : 2;
-    const currentPixStep = pixStage === 'SHIPPING' ? 1 : pixStage === 'ADDRESS' ? 2 : totalPixSteps;
 
     // Timer Effect
     useEffect(() => {
@@ -177,6 +175,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         if (isOpen) {
             setPixStage('SHIPPING');
             setSuccessData(null);
+            setOrderTotal(null);
             setIsConfirmed(false);
             setTimeLeft(300);
         }
@@ -227,7 +226,9 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         };
 
         try {
+            const currentTotal = total;
             const response = await api.post('/orders', payload);
+            setOrderTotal(currentTotal);
             setManualSuccessData(response.data);
             await clearCart();
         } catch (err) {
@@ -286,7 +287,9 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         }
 
         try {
+            const currentTotal = total;
             const response = await api.post('/checkout/pix', payload);
+            setOrderTotal(currentTotal);
             setSuccessData(response.data);
             await clearCart();
         } catch (error: unknown) {
@@ -430,6 +433,13 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                         Pedido <strong>N° {successData.order_number}</strong>. Escaneie o QR Code abaixo para pagar via PIX.
                     </p>
 
+                    {orderTotal !== null && (
+                        <div className="w-full mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center">
+                            <span className="text-sm text-gray-600 font-medium">Total a pagar:</span>
+                            <span className="text-xl font-bold text-black">R$ {orderTotal.toFixed(2)}</span>
+                        </div>
+                    )}
+
                     {qrImageSrc && (
                         <div className="bg-white p-4 rounded-2xl border-2 border-dashed border-gray-200 mb-6 flex justify-center w-full shadow-inner">
                             <img
@@ -510,13 +520,6 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                     </h2>
                 </div>
 
-                <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between text-sm text-gray-600 mb-2">
-                        <span>Total ({items.length} itens)</span>
-                        <span className="font-bold text-black text-lg">R$ {total.toFixed(2)}</span>
-                    </div>
-                </div>
-
                 {USE_MERCADOPAGO ? (
                     !isAuthenticated ? (
                         <div className="py-2">
@@ -527,16 +530,19 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                             onSubmit={handleSubmitPix}
                             className="space-y-4"
                         >
-                            <p className="text-sm text-gray-600">Olá, <strong>{user?.name}</strong>.</p>
-                            <p className="text-xs text-gray-500">Etapa {currentPixStep} de {totalPixSteps}</p>
                             {checkingAddressStatus && (
                                 <p className="text-xs text-gray-500">Carregando dados de endereço...</p>
                             )}
 
                             {pixStage === 'SHIPPING' && (
                                 <>
+                                    <div className="flex flex-col items-center mb-4 mt-2">
+                                        <div className="w-16 h-16 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center mb-3">
+                                            <Truck className="w-8 h-8 text-black" />
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-800">Escolha o tipo de entrega</p>
+                                    </div>
                                     <div>
-                                        <p className="block text-sm font-medium text-gray-700 mb-2">Tipo de Frete</p>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer transition-colors hover:bg-gray-50">
                                                 <input
@@ -560,20 +566,28 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                             </label>
                                         </div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleNextFromShipping}
-                                        disabled={checkingAddressStatus}
-                                        className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 mt-4 active:scale-95"
-                                    >
-                                        Continuar
-                                    </button>
+                                    <div className="pt-4 mt-8">
+                                        <button
+                                            type="button"
+                                            onClick={handleNextFromShipping}
+                                            disabled={checkingAddressStatus}
+                                            className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 active:scale-95"
+                                        >
+                                            Continuar
+                                        </button>
+                                    </div>
                                 </>
                             )}
 
                             {pixStage === 'ADDRESS' && (
                                 <>
-                                    <div className="space-y-4 max-h-[40vh] overflow-y-auto px-1 custom-scrollbar">
+                                    <div className="flex flex-col items-center mb-4 mt-2">
+                                        <div className="w-16 h-16 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center mb-3">
+                                            <MapPin className="w-8 h-8 text-black" />
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-800">Endereço de Entrega</p>
+                                    </div>
+                                    <div className="space-y-4 px-1">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
                                             <input
@@ -662,7 +676,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3 pt-4">
+                                    <div className="grid grid-cols-2 gap-3 pt-4 mt-8">
                                         <button
                                             type="button"
                                             onClick={() => setPixStage('SHIPPING')}
@@ -683,7 +697,15 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
                             {pixStage === 'PIX' && (
                                 <>
-                                    <p className="text-sm text-gray-600">Para emitir a chave PIX, confirme seu CPF.</p>
+                                    <div className="flex flex-col items-center mb-4 mt-2">
+                                        <div className="w-16 h-16 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center mb-3">
+                                            <Fingerprint className="w-8 h-8 text-black" />
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-800">Confirmação de Identidade</p>
+                                    </div>
+                                    <div className="text-center mb-4">
+                                        <p className="text-sm text-gray-600">Para emitir a chave PIX, informe seu CPF.</p>
+                                    </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">CPF (apenas números)</label>
                                         <input
@@ -704,7 +726,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                             }}
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3 pt-4">
+                                    <div className="grid grid-cols-2 gap-3 pt-4 mt-8">
                                         <button
                                             type="button"
                                             onClick={() => setPixStage(shippingType === 'FREE_DELIVERY_FOZ' ? 'ADDRESS' : 'SHIPPING')}
