@@ -421,7 +421,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
     if (isSyncing) {
         return (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl">
                     <h2 className="text-2xl font-bold mb-2">Sincronizando carrinho</h2>
                     <p className="text-gray-600">
@@ -437,7 +437,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=Olá, gostaria de confirmar meu pedido N° ${manualSuccessData.order_number}`;
 
         return (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl">
                     <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold mb-2">Pedido Nº {manualSuccessData.order_number} Recebido!</h2>
@@ -470,7 +470,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     if (successData) {
         if (isConfirmed || successData.payment_status === 'approved') {
             return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl flex flex-col items-center">
                         <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
                             <CheckCircle className="w-16 h-16 text-green-500" />
@@ -492,7 +492,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
         if (successData.payment_status === 'rejected' || successData.payment_status === 'cancelled') {
             return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl flex flex-col items-center relative">
                         <button
                             onClick={onClose}
@@ -527,7 +527,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
         if (paymentMethod !== 'PIX' && successData.payment_status === 'in_process') {
             return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl flex flex-col items-center relative">
                         <button
                             onClick={onClose}
@@ -557,7 +557,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         }
 
         return (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl flex flex-col items-center relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gray-100">
                         <div
@@ -661,7 +661,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     }
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl w-full max-w-md p-6 relative shadow-2xl max-h-[95vh] overflow-y-auto custom-scrollbar flex flex-col">
                 <button
                     onClick={onClose}

@@ -125,7 +125,6 @@ export const CartDrawer = ({ onClose, onCheckout }: CartDrawerProps) => {
                         disabled={items.length === 0}
                         onClick={() => {
                             setIsOpeningCheckout(true);
-                            onClose();
                             window.setTimeout(() => {
                                 onCheckout();
                                 setIsOpeningCheckout(false);
