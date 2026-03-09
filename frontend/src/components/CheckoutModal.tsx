@@ -189,21 +189,6 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         }
     }, [isOpen]);
 
-    if (!isOpen) return null;
-
-    if (isSyncing) {
-        return (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl">
-                    <h2 className="text-2xl font-bold mb-2">Sincronizando carrinho</h2>
-                    <p className="text-gray-600">
-                        Aguarde um instante enquanto carregamos os itens mais recentes da sua conta.
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
     const handleCopyPix = () => {
         if (successData?.qr_code_copia_e_cola) {
             navigator.clipboard.writeText(successData.qr_code_copia_e_cola);
@@ -425,6 +410,21 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         }
     };
 
+    if (!isOpen) return null;
+
+    if (isSyncing) {
+        return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl">
+                    <h2 className="text-2xl font-bold mb-2">Sincronizando carrinho</h2>
+                    <p className="text-gray-600">
+                        Aguarde um instante enquanto carregamos os itens mais recentes da sua conta.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     if (manualSuccessData) {
         const phone = import.meta.env.VITE_STORE_WHATSAPP_NUMBER || '5545999252323';
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=Olá, gostaria de confirmar meu pedido N° ${manualSuccessData.order_number}`;
@@ -502,6 +502,11 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                             Infelizmente seu pagamento não foi aprovado pelo emissor do cartão.
                             Por favor, tente novamente com outro cartão ou via Pix.
                         </p>
+                        {successData.payment_status_detail && (
+                            <div className="w-full mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+                                Motivo informado: {successData.payment_status_detail}
+                            </div>
+                        )}
                         <button
                             onClick={onClose}
                             className="w-full bg-black text-white font-bold py-4 px-6 rounded-xl hover:bg-gray-800 transition-all"

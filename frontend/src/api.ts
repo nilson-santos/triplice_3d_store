@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://triplice3d.com.br/api'),
+    baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : 'https://triplice3d.com.br/api'),
     headers: {
         'Content-Type': 'application/json',
     },
@@ -73,6 +73,7 @@ export interface OrderPixResponse {
     qr_code_base64: string | null;
     qr_code_copia_e_cola: string | null;
     payment_status: string | null;
+    payment_status_detail?: string | null;
 }
 
 export interface OrderStatusResponse {

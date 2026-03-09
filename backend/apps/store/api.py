@@ -122,6 +122,7 @@ class OrderResponseSchema(Schema):
     qr_code_base64: str | None = None
     qr_code_copia_e_cola: str | None = None
     payment_status: str | None = None
+    payment_status_detail: str | None = None
 
 class OrderStatusSchema(Schema):
     status: str
@@ -386,7 +387,8 @@ def checkout_pix(request, payload: OrderPixCreateSchema):
         "order_number": order.order_number,
         "qr_code_base64": qr_code_base64,
         "qr_code_copia_e_cola": qr_code_copia_e_cola,
-        "payment_status": mp_status
+        "payment_status": mp_status,
+        "payment_status_detail": payment.get("status_detail")
     }
 
 
@@ -529,7 +531,8 @@ def checkout_card(request, payload: OrderCardCreateSchema):
     return {
         "id": order.id,
         "order_number": order.order_number,
-        "payment_status": mp_status
+        "payment_status": mp_status,
+        "payment_status_detail": payment.get("status_detail") or payment.get("message")
     }
 
 
@@ -626,7 +629,8 @@ def regenerate_checkout_pix(request, order_id: UUID):
         "order_number": order.order_number,
         "qr_code_base64": qr_code_base64,
         "qr_code_copia_e_cola": qr_code_copia_e_cola,
-        "payment_status": mp_status
+        "payment_status": mp_status,
+        "payment_status_detail": payment.get("status_detail")
     }
 
 @api.post("/orders/track", response=List[TrackedOrderSchema])
@@ -708,14 +712,14 @@ class PromotionalPopupSchema(ModelSchema):
             return request.build_absolute_uri(obj.image.url)
         return None
 
-@api.get("/promotions/active", response=PromotionalPopupSchema)
+@api.get("/promotions/active", response={200: PromotionalPopupSchema, 404: ErrorResponseSchema})
 def get_active_promotion(request):
     """
     Returns the most recently created active promotion.
     """
     promo = PromotionalPopup.objects.filter(is_active=True).order_by('-created_at').first()
     if not promo:
-        return 404, {"message": "No active promotion found"}
+        return 404, {"error": "No active promotion found"}
     return promo
 
 @api.get("/orders/{order_id}/status", response=OrderStatusSchema)

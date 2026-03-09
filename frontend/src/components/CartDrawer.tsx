@@ -1,17 +1,17 @@
 import { X, Plus, Minus, Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { CheckoutModal } from './CheckoutModal';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 
 interface CartDrawerProps {
     onClose: () => void;
+    onCheckout: () => void;
 }
 
-export const CartDrawer = ({ onClose }: CartDrawerProps) => {
+export const CartDrawer = ({ onClose, onCheckout }: CartDrawerProps) => {
     const { items, removeFromCart, addToCart, decreaseQuantity, total } = useCart();
-    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [isOpeningCheckout, setIsOpeningCheckout] = useState(false);
 
     // Entrar: Direita para Esquerda (x: 100% -> 0)
     // Sair: Esquerda para Direita (x: 0 -> 100%)
@@ -123,21 +123,20 @@ export const CartDrawer = ({ onClose }: CartDrawerProps) => {
                     </div>
                     <button
                         disabled={items.length === 0}
-                        onClick={() => setIsCheckoutOpen(true)}
+                        onClick={() => {
+                            setIsOpeningCheckout(true);
+                            onClose();
+                            window.setTimeout(() => {
+                                onCheckout();
+                                setIsOpeningCheckout(false);
+                            }, 0);
+                        }}
                         className="w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Finalizar Pedido
+                        {isOpeningCheckout ? 'Abrindo checkout...' : 'Finalizar Pedido'}
                     </button>
                 </div>
             </motion.div>
-
-            <CheckoutModal
-                isOpen={isCheckoutOpen}
-                onClose={() => {
-                    setIsCheckoutOpen(false);
-                    onClose();
-                }}
-            />
         </>
     );
 };

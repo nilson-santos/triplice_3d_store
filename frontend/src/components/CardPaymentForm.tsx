@@ -27,8 +27,10 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
     const initialized = useRef(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [statusText, setStatusText] = useState('');
+    const [sdkError, setSdkError] = useState('');
     const onSubmitRef = useRef(onSubmit);
     const paymentTypeRef = useRef(paymentType);
+    const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY?.trim();
 
     // Update refs on every render to ensure callbacks/types are current without re-initializing SDK
     useEffect(() => {
@@ -37,8 +39,20 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
     });
 
     useEffect(() => {
-        if (!window.MercadoPago || initialized.current) return;
-        const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, { locale: 'pt-BR' });
+        if (initialized.current) return;
+
+        if (!publicKey) {
+            setSdkError('A chave publica do Mercado Pago nao foi configurada no frontend.');
+            return;
+        }
+
+        if (!window.MercadoPago) {
+            setSdkError('O SDK do Mercado Pago nao foi carregado.');
+            return;
+        }
+
+        setSdkError('');
+        const mp = new window.MercadoPago(publicKey, { locale: 'pt-BR' });
 
         initialized.current = true;
 
@@ -177,7 +191,7 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
             if (cardForm) cardForm.unmount();
             initialized.current = false;
         };
-    }, [total, email, cpfDefault]); // Removed onSubmit and paymentType dependencies as they are now in refs
+    }, [total, email, cpfDefault, publicKey]); // Removed onSubmit and paymentType dependencies as they are now in refs
 
     return (
         <form id="form-checkout" ref={formRef} className="space-y-4 pt-2">
@@ -294,6 +308,12 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                         <span>{statusText}</span>
                     </div>
                 )}
+
+                {sdkError && (
+                    <div className="p-3 bg-red-50 text-red-800 text-sm rounded-lg border border-red-100">
+                        {sdkError}
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2 mt-4">
@@ -308,7 +328,7 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                 <button
                     type="submit"
                     id="form-checkout__submit"
-                    disabled={loading}
+                    disabled={loading || !!sdkError}
                     className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                     {loading ? 'Processando...' : <><ShieldCheck size={20} /> Pagar</>}

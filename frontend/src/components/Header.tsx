@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { CartDrawer } from './CartDrawer';
+import { CheckoutErrorBoundary } from './CheckoutErrorBoundary';
+import { CheckoutModal } from './CheckoutModal';
 import { MenuDrawer } from './MenuDrawer';
 import logo from '../assets/logo.png';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -14,6 +16,7 @@ export const Header = () => {
     const { items } = useCart();
     const { isAuthenticated, user, openAuthModal, logout } = useAuth();
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -391,9 +394,19 @@ export const Header = () => {
 
             <AnimatePresence>
                 {isCartOpen && (
-                    <CartDrawer onClose={() => setIsCartOpen(false)} />
+                    <CartDrawer
+                        onClose={() => setIsCartOpen(false)}
+                        onCheckout={() => setIsCheckoutOpen(true)}
+                    />
                 )}
             </AnimatePresence>
+
+            <CheckoutErrorBoundary>
+                <CheckoutModal
+                    isOpen={isCheckoutOpen}
+                    onClose={() => setIsCheckoutOpen(false)}
+                />
+            </CheckoutErrorBoundary>
         </>
     );
 };
