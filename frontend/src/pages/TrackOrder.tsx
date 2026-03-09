@@ -43,21 +43,20 @@ export const TrackOrder = () => {
         }
     }, [isAuthenticated, fetchOrders]);
 
-    // Polling logic: refresh if there are pending orders
+    // Polling logic: keep orders updated for async status changes (e.g. refund/chargeback)
     useEffect(() => {
         let interval: ReturnType<typeof setInterval> | undefined;
-        const hasPending = orders.some(o => o.status === 'PENDING' || o.payment_status === 'pending');
 
-        if (isAuthenticated && hasPending) {
+        if (isAuthenticated) {
             interval = setInterval(() => {
                 fetchOrders(false);
-            }, 10000); // 10 seconds
+            }, 30000); // 30 seconds
         }
 
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isAuthenticated, orders, fetchOrders]);
+    }, [isAuthenticated, fetchOrders]);
 
     // Timer Effect for modal
     useEffect(() => {
@@ -104,7 +103,18 @@ export const TrackOrder = () => {
     };
 
     const StatusBadge = ({ status, paymentStatus }: { status: string, paymentStatus?: string | null }) => {
-        const isApproved = paymentStatus === 'approved' || status === 'CONFIRMED' || status === 'COMPLETED';
+        const normalizedPaymentStatus = (paymentStatus || '').toLowerCase();
+
+        if (normalizedPaymentStatus === 'refunded' || normalizedPaymentStatus === 'charged_back') {
+            return (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm bg-rose-100 text-rose-700">
+                    <X size={12} />
+                    {normalizedPaymentStatus === 'charged_back' ? 'Chargeback' : 'Reembolsado'}
+                </span>
+            );
+        }
+
+        const isApproved = normalizedPaymentStatus === 'approved' || status === 'CONFIRMED' || status === 'COMPLETED';
 
         const statusConfig: Record<string, { bg: string, text: string, label: string, icon: React.ComponentType<{ size?: number | string }> }> = {
             'PENDING': {

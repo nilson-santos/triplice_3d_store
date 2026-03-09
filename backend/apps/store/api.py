@@ -223,8 +223,21 @@ def _normalize_payment_status(raw_status) -> str | None:
     if raw_status is None:
         return None
     if isinstance(raw_status, str):
-        return raw_status
-    return str(raw_status)
+        return raw_status.strip().lower()
+    return str(raw_status).strip().lower()
+
+
+def _order_status_from_payment_status(payment_status: str | None, fallback: str = "PENDING") -> str:
+    if not payment_status:
+        return fallback
+
+    if payment_status == "approved":
+        return "CONFIRMED"
+
+    if payment_status in {"rejected", "cancelled", "refunded", "charged_back"}:
+        return "CANCELLED"
+
+    return "PENDING"
 
 
 def _extract_qr_data(payment: dict) -> tuple[str | None, str | None]:
@@ -370,12 +383,7 @@ def checkout_pix(request, payload: OrderPixCreateSchema):
         if payment.get("payment_method_id") is not None:
             order.payment_method = str(payment.get("payment_method_id"))
 
-        if mp_status == "approved":
-            order.status = 'CONFIRMED'
-        elif mp_status in {"rejected", "cancelled"}:
-            order.status = 'CANCELLED'
-        else:
-            order.status = 'PENDING'
+        order.status = _order_status_from_payment_status(mp_status)
             
         order.save()
         qr_code_base64, qr_code_copia_e_cola = _extract_qr_data(payment)
@@ -513,12 +521,7 @@ def checkout_card(request, payload: OrderCardCreateSchema):
         if payment.get("payment_method_id") is not None:
             order.payment_method = str(payment.get("payment_method_id"))
 
-        if mp_status == "approved":
-            order.status = 'CONFIRMED'
-        elif mp_status in {"rejected", "cancelled"}:
-            order.status = 'CANCELLED'
-        else:
-            order.status = 'PENDING'
+        order.status = _order_status_from_payment_status(mp_status)
             
         order.save()
     else:
@@ -612,12 +615,7 @@ def regenerate_checkout_pix(request, order_id: UUID):
         if payment.get("payment_method_id") is not None:
             order.payment_method = str(payment.get("payment_method_id"))
 
-        if mp_status == "approved":
-            order.status = 'CONFIRMED'
-        elif mp_status in {"rejected", "cancelled"}:
-            order.status = 'CANCELLED'
-        else:
-            order.status = 'PENDING'
+        order.status = _order_status_from_payment_status(mp_status)
 
         order.save()
         qr_code_base64, qr_code_copia_e_cola = _extract_qr_data(payment)
@@ -818,10 +816,10 @@ def mercadopago_webhook(request):
                     if payment.get("payment_method_id"):
                         order.payment_method = str(payment.get("payment_method_id"))
 
-                    if mp_payment_status == "approved":
-                        order.status = "CONFIRMED"
-                    elif mp_payment_status in ["rejected", "cancelled"]:
-                        order.status = "CANCELLED"
+                    order.status = _order_status_from_payment_status(
+                        mp_payment_status,
+                        fallback=order.status or "PENDING"
+                    )
                     
                     order.save()
                     logger.info(f"Webhook MP: Pedido {order.order_number} atualizado para {mp_payment_status}")
