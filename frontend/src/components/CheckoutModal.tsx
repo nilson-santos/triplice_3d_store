@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { api, getProfileAddressStatus } from '../api';
 import type { CreateOrderPayload, CreateOrderPixPayload, OrderPixResponse } from '../api';
@@ -335,15 +335,19 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         setPixStage('PAYMENT_METHOD');
     };
 
-    const handleNextFromPaymentMethod = () => {
+    const handleNextFromPaymentMethod = useCallback(() => {
         if (paymentMethod === 'PIX') {
             setPixStage('PIX');
         } else {
             setPixStage('CARD');
         }
-    };
+    }, [paymentMethod]);
 
-    const handleSubmitCard = async (cardData: { token: string; paymentMethodId: string; issuerId: string; installments: number; cpf: string }) => {
+    const handleCancelCard = useCallback(() => {
+        setPixStage('PAYMENT_METHOD');
+    }, []);
+
+    const handleSubmitCard = useCallback(async (cardData: { token: string; paymentMethodId: string; issuerId: string; installments: number; cpf: string }) => {
         if (isSyncing) {
             alert('Aguarde a sincronização do carrinho terminar.');
             return;
@@ -404,7 +408,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [isSyncing, items, cpfDigits, shippingType, registrationZipcode, registrationStreet, registrationNumber, registrationComplement, registrationNeighborhood, registrationCity, registrationState, total, clearCart]);
 
     const handleRegeneratePix = async () => {
         if (!successData?.id) return;
@@ -927,7 +931,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                     paymentType={paymentMethod as 'CREDIT_CARD' | 'DEBIT_CARD'}
                                     loading={loading}
                                     onSubmit={handleSubmitCard}
-                                    onCancel={() => setPixStage('PAYMENT_METHOD')}
+                                    onCancel={handleCancelCard}
                                 />
                             )}
 

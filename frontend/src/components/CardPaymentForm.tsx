@@ -27,6 +27,14 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
     const initialized = useRef(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [statusText, setStatusText] = useState('');
+    const onSubmitRef = useRef(onSubmit);
+    const paymentTypeRef = useRef(paymentType);
+
+    // Update refs on every render to ensure callbacks/types are current without re-initializing SDK
+    useEffect(() => {
+        onSubmitRef.current = onSubmit;
+        paymentTypeRef.current = paymentType;
+    });
 
     useEffect(() => {
         if (!window.MercadoPago || initialized.current) return;
@@ -62,6 +70,10 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                     id: "form-checkout__issuer",
                     placeholder: "Banco emissor"
                 },
+                installments: {
+                    id: "form-checkout__installments",
+                    placeholder: "Parcelas"
+                },
                 identificationType: {
                     id: "form-checkout__identificationType",
                 },
@@ -88,13 +100,13 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                     let finalInstallments = installmentsSelect ? parseInt(installmentsSelect.value || '1', 10) : 1;
 
                     // For debit cards, always force 1 installment
-                    if (paymentType === 'DEBIT_CARD') {
+                    if (paymentTypeRef.current === 'DEBIT_CARD') {
                         finalInstallments = 1;
                     }
 
                     const cpfInput = document.getElementById('form-checkout__identificationNumber') as HTMLInputElement;
 
-                    onSubmit({
+                    onSubmitRef.current({
                         token: formData.token,
                         paymentMethodId: formData.paymentMethodId,
                         issuerId: formData.issuerId,
@@ -129,7 +141,7 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                     } else {
                         setStatusText('');
                         const isDebit = paymentMethods.some((p: any) => p.payment_type_id === 'debit_card');
-                        if (paymentType === 'DEBIT_CARD' && !isDebit) {
+                        if (paymentTypeRef.current === 'DEBIT_CARD' && !isDebit) {
                             setStatusText("O cartão inserido não parece ser de débito. Tente outro.");
                         }
                     }
@@ -165,7 +177,7 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
             if (cardForm) cardForm.unmount();
             initialized.current = false;
         };
-    }, [total, email, cpfDefault, paymentType, onSubmit]); // Removed 'loading' to prevent re-init on every state change
+    }, [total, email, cpfDefault]); // Removed onSubmit and paymentType dependencies as they are now in refs
 
     return (
         <form id="form-checkout" ref={formRef} className="space-y-4 pt-2">
