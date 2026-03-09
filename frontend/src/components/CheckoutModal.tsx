@@ -54,7 +54,7 @@ interface CheckoutModalProps {
 
 export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     const { items, total, clearCart, isSyncing } = useCart();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const [cpf, setCpf] = useState('');
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -922,7 +922,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                             {pixStage === 'CARD' && (
                                 <CardPaymentForm
                                     total={orderTotal || total}
-                                    email={cpf} /* we pass cpf instead of email or pass auth email? The component doesn't get user's email easily but that's fine */
+                                    email={user?.email || ''}
                                     cpfDefault={cpf}
                                     paymentType={paymentMethod as 'CREDIT_CARD' | 'DEBIT_CARD'}
                                     loading={loading}

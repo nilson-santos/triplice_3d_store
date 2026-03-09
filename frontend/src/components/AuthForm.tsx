@@ -84,7 +84,7 @@ export const AuthForm = ({ onSuccess, initialView = 'login' }: AuthFormProps) =>
         clearMessages();
         try {
             const res = await api.post('/auth/verify-otp', { email, code: otp });
-            login(res.data.access, res.data.user_name, res.data.email_verified, !!res.data.is_staff);
+            login(res.data.access, res.data.user_name, email, res.data.email_verified, !!res.data.is_staff);
             if (onSuccess) onSuccess();
         } catch (err: unknown) {
             const error = err as { response?: { data?: { error?: string } } };

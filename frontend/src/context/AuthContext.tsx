@@ -5,6 +5,7 @@ import { fetchFavorites, toggleFavoriteAPI } from '../api';
 
 export interface User {
     name: string;
+    email: string;
     email_verified: boolean;
     is_staff: boolean;
 }
@@ -13,7 +14,7 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
-    login: (token: string, name: string, verified: boolean, isStaff: boolean) => void;
+    login: (token: string, name: string, email: string, verified: boolean, isStaff: boolean) => void;
     logout: () => void;
     openAuthModal: (view?: 'login' | 'register') => void;
     closeAuthModal: () => void;
@@ -86,8 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const login = (newToken: string, name: string, verified: boolean, isStaff: boolean) => {
-        const newUser: User = { name, email_verified: verified, is_staff: isStaff };
+    const login = (newToken: string, name: string, email: string, verified: boolean, isStaff: boolean) => {
+        const newUser: User = { name, email, email_verified: verified, is_staff: isStaff };
 
         localStorage.setItem('auth_token', newToken);
         localStorage.setItem('auth_user', JSON.stringify(newUser));

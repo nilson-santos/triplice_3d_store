@@ -165,7 +165,7 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
             if (cardForm) cardForm.unmount();
             initialized.current = false;
         };
-    }, [total, email, cpfDefault, paymentType, onSubmit, loading]);
+    }, [total, email, cpfDefault, paymentType, onSubmit]); // Removed 'loading' to prevent re-init on every state change
 
     return (
         <form id="form-checkout" ref={formRef} className="space-y-4 pt-2">
