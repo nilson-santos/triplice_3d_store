@@ -885,7 +885,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                                     </svg>
                                                     <span className="text-sm font-bold text-gray-800">Cartão de Crédito</span>
                                                 </div>
-                                                <span className={`text-xs ${paymentMethod === 'CREDIT_CARD' ? 'text-black font-medium' : 'text-gray-500'}`}>Apenas 1x</span>
+                                                {/* <span className={`text-xs ${paymentMethod === 'CREDIT_CARD' ? 'text-black font-medium' : 'text-gray-500'}`}>Apenas 1x</span> */}
                                             </label>
 
                                             <label className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${paymentMethod === 'DEBIT_CARD' ? 'border-black bg-gray-50' : 'border-gray-200 hover:bg-gray-50'}`}>
