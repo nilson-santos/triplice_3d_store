@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { Heart, ShoppingCart, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../api';
@@ -18,6 +18,7 @@ export const Favorites = () => {
     const { addToCart } = useCart();
     const [favorites, setFavorites] = useState<FavoriteProduct[]>([]);
     const [loading, setLoading] = useState(true);
+    const [recentlyAddedId, setRecentlyAddedId] = useState<number | null>(null);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -33,6 +34,25 @@ export const Favorites = () => {
     const handleRemove = async (productId: number) => {
         await toggleFav(productId);
         setFavorites(prev => prev.filter(f => f.product_id !== productId));
+    };
+
+    const handleAddToCart = async (favorite: FavoriteProduct) => {
+        await addToCart({
+            id: favorite.product_id,
+            name: favorite.product_name,
+            price: String(favorite.product_price),
+            image: favorite.product_image,
+            slug: favorite.product_slug,
+            has_colors: false,
+            description: '',
+            categories: [],
+            size: '',
+            images: []
+        });
+        setRecentlyAddedId(favorite.product_id);
+        window.setTimeout(() => {
+            setRecentlyAddedId(current => current === favorite.product_id ? null : current);
+        }, 1200);
     };
 
     return (
@@ -88,10 +108,11 @@ export const Favorites = () => {
                                 </p>
                                 <div className="flex gap-2 mt-auto pt-1">
                                     <button
-                                        onClick={() => addToCart({ id: fav.product_id, name: fav.product_name, price: String(fav.product_price), image: fav.product_image, slug: fav.product_slug, has_colors: false, description: '', categories: [], size: '', images: [] })}
-                                        className="flex-1 bg-black text-white text-xs font-bold py-2 rounded-lg hover:bg-gray-800 transition flex items-center justify-center gap-1"
+                                        onClick={() => handleAddToCart(fav)}
+                                        className={`flex-1 text-xs font-bold py-2 rounded-lg transition flex items-center justify-center gap-1 ${recentlyAddedId === fav.product_id ? 'bg-emerald-600 text-white' : 'bg-black text-white hover:bg-gray-800'}`}
                                     >
-                                        <ShoppingCart size={14} /> Adicionar
+                                        {recentlyAddedId === fav.product_id ? <Check size={14} /> : <ShoppingCart size={14} />}
+                                        {recentlyAddedId === fav.product_id ? 'Adicionado' : 'Adicionar'}
                                     </button>
                                     <button
                                         onClick={() => handleRemove(fav.product_id)}

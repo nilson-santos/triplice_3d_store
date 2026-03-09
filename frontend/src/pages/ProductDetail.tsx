@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ShoppingCart, PaintBucket, Ruler, Heart, Share2 } from 'lucide-react';
+import { ChevronLeft, ShoppingCart, PaintBucket, Ruler, Heart, Share2, Check } from 'lucide-react';
 import { api, getColors } from '../api';
 import type { Product, Color } from '../api';
 import { useCart } from '../context/CartContext';
@@ -19,6 +19,7 @@ export const ProductDetail = () => {
     const [mainImage, setMainImage] = useState<string | null>(null);
     const [selectedColor, setSelectedColor] = useState<number | null>(null);
     const [quantity, setQuantity] = useState(1);
+    const [justAdded, setJustAdded] = useState(false);
 
     // Global colors
     const [globalColors, setGlobalColors] = useState<Color[]>([]);
@@ -50,9 +51,11 @@ export const ProductDetail = () => {
         fetchProduct();
     }, [slug]);
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         if (product) {
-            addToCart(product, quantity);
+            await addToCart(product, quantity);
+            setJustAdded(true);
+            window.setTimeout(() => setJustAdded(false), 1200);
         }
     };
 
@@ -254,14 +257,22 @@ export const ProductDetail = () => {
                                 +
                             </button>
                         </div>
-                        <button
+                        <motion.button
                             onClick={handleAddToCart}
-                            className="flex-1 py-3 sm:py-4 md:py-3 px-2 sm:px-6 md:px-4 rounded-2xl md:rounded-xl flex items-center justify-center gap-2 text-[13px] sm:text-lg md:text-sm font-semibold transition-all duration-300 bg-black text-white hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98]"
+                            animate={justAdded ? { scale: [1, 1.03, 0.98, 1] } : { scale: 1 }}
+                            transition={{ duration: 0.45, ease: 'easeOut' }}
+                            className={`flex-1 py-3 sm:py-4 md:py-3 px-2 sm:px-6 md:px-4 rounded-2xl md:rounded-xl flex items-center justify-center gap-2 text-[13px] sm:text-lg md:text-sm font-semibold transition-all duration-300 active:scale-[0.98] ${justAdded ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-black text-white hover:bg-gray-800 hover:scale-[1.02]'}`}
                         >
-                            <>
-                                <ShoppingCart size={20} className="sm:w-6 sm:h-6 md:w-5 md:h-5" /> Adicionar ao Carrinho
-                            </>
-                        </button>
+                            {justAdded ? (
+                                <>
+                                    <Check size={20} className="sm:w-6 sm:h-6 md:w-5 md:h-5" /> Adicionado
+                                </>
+                            ) : (
+                                <>
+                                    <ShoppingCart size={20} className="sm:w-6 sm:h-6 md:w-5 md:h-5" /> Adicionar ao Carrinho
+                                </>
+                            )}
+                        </motion.button>
                     </div>
                 </div>
             </div>
