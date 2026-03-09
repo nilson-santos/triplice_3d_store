@@ -62,10 +62,6 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                     id: "form-checkout__issuer",
                     placeholder: "Banco emissor"
                 },
-                installments: {
-                    id: "form-checkout__installments",
-                    placeholder: "Parcelas"
-                },
                 identificationType: {
                     id: "form-checkout__identificationType",
                 },
@@ -88,9 +84,11 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                     setStatusText('Processando pagamento...');
                     const formData = cardForm.getCardFormData();
 
-                    // Force 1 installment if it's credit card and user requested locking to 1x
-                    let finalInstallments = parseInt(formData.installments || '1', 10);
-                    if (paymentType === 'CREDIT_CARD' || paymentType === 'DEBIT_CARD') {
+                    const installmentsSelect = document.getElementById('form-checkout__installments') as HTMLSelectElement;
+                    let finalInstallments = installmentsSelect ? parseInt(installmentsSelect.value || '1', 10) : 1;
+
+                    // For debit cards, always force 1 installment
+                    if (paymentType === 'DEBIT_CARD') {
                         finalInstallments = 1;
                     }
 
@@ -106,6 +104,24 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                 },
                 onFetching: (resource: any) => {
                     console.log("Fetching resource: ", resource);
+                },
+                onInstallmentsReceived: (error: any, installments: any) => {
+                    if (error) {
+                        console.warn("MP SDK Installments error: ", error);
+                        return;
+                    }
+                    const select = document.getElementById('form-checkout__installments') as HTMLSelectElement;
+                    if (!select) return;
+
+                    // Clear and manually populate installments avoiding SDK crash
+                    select.options.length = 0;
+                    if (installments && installments.payer_costs && installments.payer_costs.length > 0) {
+                        installments.payer_costs.forEach((ic: any) => {
+                            select.options.add(new Option(ic.recommended_message, ic.installments));
+                        });
+                    } else {
+                        select.options.add(new Option('1x', '1'));
+                    }
                 },
                 onPaymentMethodsReceived: (error: any, paymentMethods: any[]) => {
                     if (error) {
@@ -255,7 +271,7 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                     {/* Always visible single installment or dynamic select */}
                     <select
                         id="form-checkout__installments"
-                        className="w-full p-3 border border-gray-300 rounded-lg outline-none transition bg-gray-50 appearance-none pointer-events-none"
+                        className="w-full p-3 border border-gray-300 rounded-lg outline-none transition bg-white"
                     >
                     </select>
                 </div>
