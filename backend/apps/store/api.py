@@ -2,13 +2,15 @@ from typing import List
 import unicodedata
 import json
 import logging
+from django.db.utils import OperationalError, ProgrammingError
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
 from ninja import NinjaAPI, Schema, ModelSchema, Query
 from django.shortcuts import get_object_or_404
 from django.http import FileResponse
-from .models import Product, Order, OrderItem, Category, Banner, Color, ProductImage
+from .models import Product, Order, OrderItem, Category, Banner, Color, ProductImage, DailyUniqueVisit
 from uuid import UUID
 from django.conf import settings
 from ninja_jwt.authentication import JWTAuth
@@ -155,6 +157,11 @@ class BannerSchema(ModelSchema):
             return request.build_absolute_uri(obj.image.url)
         return None
 
+
+class DailyUniqueVisitsSchema(Schema):
+    date: str
+    count: int
+
 from ninja.pagination import paginate
 
 @api.get("/categories", response=List[CategorySchema])
@@ -210,6 +217,24 @@ def generate_price_tags(request, data: GeneratePriceTagsSchema):
     
     response = FileResponse(pdf_buffer, as_attachment=True, filename='etiquetas.pdf')
     return response
+
+
+@api.get("/admin/daily-unique-visits", response={200: DailyUniqueVisitsSchema, 403: ErrorResponseSchema}, auth=JWTAuth())
+def get_daily_unique_visits(request):
+    user = request.user
+    if not user.is_staff:
+        return 403, {"error": "Acesso negado."}
+
+    today = timezone.localdate()
+    try:
+        count = DailyUniqueVisit.objects.filter(date=today).count()
+    except (OperationalError, ProgrammingError):
+        count = 0
+
+    return {
+        "date": today.isoformat(),
+        "count": count,
+    }
 
 @api.get("/products/{slug}", response=ProductSchema)
 def get_product(request, slug: str):

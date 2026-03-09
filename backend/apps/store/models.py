@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from django.utils import timezone
 import uuid
 
 class Category(models.Model):
@@ -171,3 +172,20 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity}x {self.product.name} no carrinho de {self.cart.user.username}"
+
+
+class DailyUniqueVisit(models.Model):
+    date = models.DateField(default=timezone.localdate, db_index=True)
+    visitor_hash = models.CharField(max_length=64)
+    first_path = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Acesso único diário"
+        verbose_name_plural = "Acessos únicos diários"
+        constraints = [
+            models.UniqueConstraint(fields=['date', 'visitor_hash'], name='unique_daily_visitor_hash'),
+        ]
+
+    def __str__(self):
+        return f"{self.date} - {self.visitor_hash[:12]}"

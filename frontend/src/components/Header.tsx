@@ -1,4 +1,4 @@
-import { ShoppingCart, Search, X, Menu, UserCircle, LogOut, Package, Heart, Shield } from 'lucide-react';
+import { ShoppingCart, Search, X, Menu, UserCircle, LogOut, Package, Heart, Shield, BarChart3 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
@@ -9,7 +9,7 @@ import { CheckoutModal } from './CheckoutModal';
 import { MenuDrawer } from './MenuDrawer';
 import logo from '../assets/logo.png';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getCategories } from '../api';
+import { getCategories, getDailyUniqueVisits } from '../api';
 import type { Category } from '../api';
 import type { FlyToCartDetail } from '../utils/cartFlyToCart';
 
@@ -42,6 +42,8 @@ export const Header = () => {
     const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
     const [showCartFeedback, setShowCartFeedback] = useState(false);
     const [flyingTokens, setFlyingTokens] = useState<FlyingCartToken[]>([]);
+    const [dailyUniqueVisits, setDailyUniqueVisits] = useState<number | null>(null);
+    const [isLoadingDailyUniqueVisits, setIsLoadingDailyUniqueVisits] = useState(false);
     const adminUrl = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://triplice3d.com.br/api')).replace(/\/api\/?$/, '/admin/');
     const totalItemsInCart = items.reduce((sum, item) => sum + item.quantity, 0);
     const distinctItemsInCart = items.length;
@@ -75,6 +77,24 @@ export const Header = () => {
             searchInputRef.current.focus();
         }
     }, [isSearchOpen]);
+
+    useEffect(() => {
+        if (!isUserMenuOpen || !user?.is_staff || isLoadingDailyUniqueVisits || dailyUniqueVisits !== null) {
+            return;
+        }
+
+        setIsLoadingDailyUniqueVisits(true);
+        getDailyUniqueVisits()
+            .then((data) => {
+                setDailyUniqueVisits(data.count);
+            })
+            .catch((error) => {
+                console.error('Falha ao carregar acessos únicos do dia', error);
+            })
+            .finally(() => {
+                setIsLoadingDailyUniqueVisits(false);
+            });
+    }, [dailyUniqueVisits, isLoadingDailyUniqueVisits, isUserMenuOpen, user?.is_staff]);
 
     useEffect(() => {
         const triggerCartFeedback = () => {
@@ -372,6 +392,15 @@ export const Header = () => {
                                                     <Shield size={16} />
                                                     Etiquetas de Preço
                                                 </button>
+                                                <div className="px-4 py-2 text-sm text-gray-600 border-t border-gray-100 mt-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <BarChart3 size={16} />
+                                                        <span>Acessos únicos hoje</span>
+                                                    </div>
+                                                    <p className="mt-1 pl-6 text-base font-semibold text-black">
+                                                        {isLoadingDailyUniqueVisits ? 'Carregando...' : (dailyUniqueVisits ?? 0)}
+                                                    </p>
+                                                </div>
                                             </>
                                         )}
                                         <button

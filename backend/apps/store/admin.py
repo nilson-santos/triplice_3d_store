@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Order, OrderItem, PromotionalPopup, Banner, Color, ProductImage, Cart, CartItem
+from .models import Category, Product, Order, OrderItem, PromotionalPopup, Banner, Color, ProductImage, Cart, CartItem, DailyUniqueVisit
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -71,3 +71,12 @@ class CartItemAdmin(admin.ModelAdmin):
     list_display = ('cart', 'product', 'quantity')
     list_filter = ('cart',)
     search_fields = ('product__name', 'cart__user__username')
+
+
+@admin.register(DailyUniqueVisit)
+class DailyUniqueVisitAdmin(admin.ModelAdmin):
+    list_display = ('date', 'first_path', 'created_at')
+    list_filter = ('date',)
+    search_fields = ('visitor_hash', 'first_path')
+    ordering = ['-date', '-created_at']
+    readonly_fields = ('date', 'visitor_hash', 'first_path', 'created_at')

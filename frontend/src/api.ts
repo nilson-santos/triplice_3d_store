@@ -217,6 +217,16 @@ export const getBanners = async (): Promise<Banner[]> => {
     return res.data;
 };
 
+export interface DailyUniqueVisitsResponse {
+    date: string;
+    count: number;
+}
+
+export const getDailyUniqueVisits = async (): Promise<DailyUniqueVisitsResponse> => {
+    const res = await api.get<DailyUniqueVisitsResponse>('/admin/daily-unique-visits');
+    return res.data;
+};
+
 export const fetchFavorites = async (): Promise<number[]> => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await api.get<any[]>('/auth/favorites');
