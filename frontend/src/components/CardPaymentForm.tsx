@@ -23,6 +23,15 @@ const formatCpf = (value: string) => {
     return value;
 };
 
+const getPayerCosts = (installments: any): any[] => {
+    if (!installments) return [];
+    if (Array.isArray(installments)) {
+        const first = installments[0];
+        return Array.isArray(first?.payer_costs) ? first.payer_costs : [];
+    }
+    return Array.isArray(installments.payer_costs) ? installments.payer_costs : [];
+};
+
 export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmit, onCancel, loading }: CardPaymentFormProps) => {
     const initialized = useRef(false);
     const formRef = useRef<HTMLFormElement>(null);
@@ -141,8 +150,9 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
 
                     // Clear and manually populate installments avoiding SDK crash
                     select.options.length = 0;
-                    if (installments && installments.payer_costs && installments.payer_costs.length > 0) {
-                        installments.payer_costs.forEach((ic: any) => {
+                    const payerCosts = getPayerCosts(installments);
+                    if (payerCosts.length > 0) {
+                        payerCosts.forEach((ic: any) => {
                             select.options.add(new Option(ic.recommended_message, ic.installments));
                         });
                     } else {
@@ -164,7 +174,11 @@ export const CardPaymentForm = ({ total, email, cpfDefault, paymentType, onSubmi
                     console.error("MP SDK Form ValidationError:", error);
                     if (error && error.length > 0) {
                         // error is usually an array of fields that failed validation
-                        const errorMap = error.map((e: any) => `${e.message} (${e.code})`).join(', ');
+                        const rawError = error.map((e: any) => `${e.message || 'Erro de validacao'} (${e.code || 'unknown'})`).join(', ');
+                        const hasInstallmentCrash = rawError.toLowerCase().includes('payer_costs');
+                        const errorMap = hasInstallmentCrash
+                            ? 'Nao foi possivel carregar as opcoes de parcelamento. Tente novamente em alguns segundos.'
+                            : rawError;
                         setStatusText(`Erro nos dados: ${errorMap}`);
                     }
                 }
