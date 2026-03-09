@@ -27,7 +27,11 @@ export const Header = () => {
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+    const [showCartFeedback, setShowCartFeedback] = useState(false);
     const adminUrl = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://triplice3d.com.br/api')).replace(/\/api\/?$/, '/admin/');
+    const totalItemsInCart = items.reduce((sum, item) => sum + item.quantity, 0);
+    const distinctItemsInCart = items.length;
+    const prevCartCountRef = useRef(totalItemsInCart);
 
     const selectedCategory = searchParams.get('category');
 
@@ -54,6 +58,16 @@ export const Header = () => {
             searchInputRef.current.focus();
         }
     }, [isSearchOpen]);
+
+    useEffect(() => {
+        if (totalItemsInCart > prevCartCountRef.current) {
+            setShowCartFeedback(true);
+            const timer = window.setTimeout(() => setShowCartFeedback(false), 1200);
+            prevCartCountRef.current = totalItemsInCart;
+            return () => window.clearTimeout(timer);
+        }
+        prevCartCountRef.current = totalItemsInCart;
+    }, [totalItemsInCart]);
 
     const handleHomeClick = (e: React.MouseEvent) => {
         if (location.pathname === '/') {
@@ -142,7 +156,7 @@ export const Header = () => {
         <>
             <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100">
                 {/* Main bar */}
-                <div className="max-w-7xl mx-auto px-4 h-14 sm:h-16 flex items-center gap-3 sm:gap-4">
+                <div className="relative z-40 max-w-7xl mx-auto px-4 h-14 sm:h-16 flex items-center gap-3 sm:gap-4">
                     {/* Mobile: hamburger LEFT of logo */}
                     <button
                         onClick={() => setIsMenuOpen(true)}
@@ -209,7 +223,7 @@ export const Header = () => {
                     </nav>
 
                     {/* Right side icons */}
-                    <div className="flex items-center gap-1 sm:gap-2 ml-auto shrink-0 relative">
+                    <div className="relative z-50 flex items-center gap-1 sm:gap-2 ml-auto shrink-0">
                         {/* Mobile: search icon toggle */}
                         <button
                             onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -299,17 +313,47 @@ export const Header = () => {
 
 
                         {/* Cart */}
-                        <button
+                        <motion.button
                             onClick={() => setIsCartOpen(true)}
                             className="relative p-2 hover:bg-gray-100 rounded-full transition"
+                            animate={showCartFeedback ? { scale: [1, 1.18, 0.96, 1], rotate: [0, -8, 8, 0] } : { scale: 1, rotate: 0 }}
+                            transition={{ duration: 0.55, ease: 'easeOut' }}
                         >
-                            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
-                            {items.length > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                                    {items.length}
-                                </span>
+                            <ShoppingCart className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors ${showCartFeedback ? 'text-emerald-600' : ''}`} />
+                            <AnimatePresence>
+                                {showCartFeedback && (
+                                    <>
+                                        <motion.span
+                                            initial={{ scale: 0.4, opacity: 0.35 }}
+                                            animate={{ scale: 1.9, opacity: 0 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                                            className="absolute inset-0 rounded-full border-2 border-emerald-400 pointer-events-none"
+                                        />
+                                        <motion.span
+                                            initial={{ opacity: 0, y: 4, scale: 0.9 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: -6, scale: 0.92 }}
+                                            transition={{ duration: 0.22, ease: 'easeOut' }}
+                                            className="absolute right-0 top-full mt-2 whitespace-nowrap rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg"
+                                        >
+                                            Adicionado
+                                        </motion.span>
+                                    </>
+                                )}
+                            </AnimatePresence>
+                            {distinctItemsInCart > 0 && (
+                                <motion.span
+                                    key={distinctItemsInCart}
+                                    initial={{ scale: 0.6, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                                    className={`absolute -top-1 -right-1 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full ${showCartFeedback ? 'bg-emerald-600' : 'bg-black'}`}
+                                >
+                                    {distinctItemsInCart}
+                                </motion.span>
                             )}
-                        </button>
+                        </motion.button>
                     </div>
                 </div>
 
@@ -358,7 +402,7 @@ export const Header = () => {
                 </AnimatePresence>
 
                 {/* Categories sub-bar — flat text tabs, horizontally scrollable */}
-                <div className="border-t border-gray-50 bg-white/60 backdrop-blur-sm">
+                <div className="relative z-10 border-t border-gray-50 bg-white/60 backdrop-blur-sm">
                     <div className="max-w-7xl mx-auto px-4 flex items-center gap-0 overflow-x-auto sm:overflow-x-visible scrollbar-hide touch-pan-x sm:justify-center">
                         <button
                             onClick={() => handleCategorySelect(null)}
