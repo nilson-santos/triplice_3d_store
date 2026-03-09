@@ -36,6 +36,7 @@ export const Header = () => {
     const searchInputRef = useRef<HTMLInputElement>(null);
     const cartButtonRef = useRef<HTMLButtonElement>(null);
     const pendingFlyFeedbackRef = useRef(false);
+    const badgeSyncTimeoutRef = useRef<number | null>(null);
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
@@ -45,6 +46,9 @@ export const Header = () => {
     const totalItemsInCart = items.reduce((sum, item) => sum + item.quantity, 0);
     const distinctItemsInCart = items.length;
     const prevCartCountRef = useRef(totalItemsInCart);
+    const prevDistinctItemsRef = useRef(distinctItemsInCart);
+    const latestDistinctItemsRef = useRef(distinctItemsInCart);
+    const [displayedDistinctItems, setDisplayedDistinctItems] = useState(distinctItemsInCart);
 
     const selectedCategory = searchParams.get('category');
 
@@ -89,6 +93,22 @@ export const Header = () => {
     }, [totalItemsInCart]);
 
     useEffect(() => {
+        latestDistinctItemsRef.current = distinctItemsInCart;
+
+        if (distinctItemsInCart < prevDistinctItemsRef.current) {
+            if (badgeSyncTimeoutRef.current) {
+                window.clearTimeout(badgeSyncTimeoutRef.current);
+                badgeSyncTimeoutRef.current = null;
+            }
+            setDisplayedDistinctItems(distinctItemsInCart);
+        } else if (distinctItemsInCart > prevDistinctItemsRef.current && !pendingFlyFeedbackRef.current) {
+            setDisplayedDistinctItems(distinctItemsInCart);
+        }
+
+        prevDistinctItemsRef.current = distinctItemsInCart;
+    }, [distinctItemsInCart]);
+
+    useEffect(() => {
         const handleFlyToCart = (event: Event) => {
             if (!cartButtonRef.current) return;
 
@@ -109,10 +129,16 @@ export const Header = () => {
                 }
             ]);
 
-            window.setTimeout(() => {
+            if (badgeSyncTimeoutRef.current) {
+                window.clearTimeout(badgeSyncTimeoutRef.current);
+            }
+
+            badgeSyncTimeoutRef.current = window.setTimeout(() => {
+                setDisplayedDistinctItems(latestDistinctItemsRef.current);
                 setShowCartFeedback(true);
                 window.setTimeout(() => setShowCartFeedback(false), 1200);
                 pendingFlyFeedbackRef.current = false;
+                badgeSyncTimeoutRef.current = null;
             }, 760);
 
             window.setTimeout(() => {
@@ -121,7 +147,12 @@ export const Header = () => {
         };
 
         window.addEventListener('triplice:fly-to-cart', handleFlyToCart as EventListener);
-        return () => window.removeEventListener('triplice:fly-to-cart', handleFlyToCart as EventListener);
+        return () => {
+            window.removeEventListener('triplice:fly-to-cart', handleFlyToCart as EventListener);
+            if (badgeSyncTimeoutRef.current) {
+                window.clearTimeout(badgeSyncTimeoutRef.current);
+            }
+        };
     }, []);
 
     const handleHomeClick = (e: React.MouseEvent) => {
@@ -398,15 +429,15 @@ export const Header = () => {
                                     </>
                                 )}
                             </AnimatePresence>
-                            {distinctItemsInCart > 0 && (
+                            {displayedDistinctItems > 0 && (
                                 <motion.span
-                                    key={distinctItemsInCart}
+                                    key={displayedDistinctItems}
                                     initial={{ scale: 0.6, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ duration: 0.2, ease: 'easeOut' }}
                                     className={`absolute -top-1 -right-1 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full ${showCartFeedback ? 'bg-emerald-600' : 'bg-black'}`}
                                 >
-                                    {distinctItemsInCart}
+                                    {displayedDistinctItems}
                                 </motion.span>
                             )}
                         </motion.button>
