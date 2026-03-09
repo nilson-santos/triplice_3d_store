@@ -91,6 +91,7 @@ export interface TrackedOrder {
     order_number: string;
     status: string;
     payment_status: string | null;
+    payment_method?: string | null;
     created_at: string;
     items: TrackedProduct[];
     total: number;
