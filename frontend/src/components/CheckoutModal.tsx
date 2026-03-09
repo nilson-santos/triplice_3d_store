@@ -6,6 +6,7 @@ import { X, CheckCircle, Smartphone, QrCode, Copy, ShieldCheck, Clock, Truck, Ma
 import { useAuth } from '../context/AuthContext';
 import { AuthForm } from './AuthForm';
 import { CardPaymentForm } from './CardPaymentForm';
+import { useNavigate } from 'react-router-dom';
 
 declare global {
     interface Window {
@@ -55,6 +56,7 @@ interface CheckoutModalProps {
 export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     const { items, total, clearCart, isSyncing } = useCart();
     const { isAuthenticated, user } = useAuth();
+    const navigate = useNavigate();
     const [cpf, setCpf] = useState('');
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -332,6 +334,11 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         setPixStage('PAYMENT_METHOD');
     }, []);
 
+    const handleTrackOrderClick = useCallback(() => {
+        onClose();
+        navigate('/rastrear-pedido');
+    }, [navigate, onClose]);
+
     const handleSubmitCard = useCallback(async (cardData: { token: string; paymentMethodId: string; issuerId: string; installments: number; cpf: string }) => {
         if (isSyncing) {
             alert('Aguarde a sincronização do carrinho terminar.');
@@ -473,7 +480,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                             Recebemos seu pagamento com sucesso. Seu pedido <strong>N° {successData.order_number}</strong> está sendo processado.
                         </p>
                         <button
-                            onClick={onClose}
+                            onClick={handleTrackOrderClick}
                             className="w-full bg-black text-white font-bold py-4 px-6 rounded-xl hover:bg-gray-800 transition-all transform hover:scale-[1.02]"
                         >
                             Acompanhar Pedido
@@ -539,7 +546,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                             Você pode acompanhar o status pela página <span className="font-bold">Meus Pedidos</span>, o status será atualizado automaticamente em alguns minutos.
                         </p>
                         <button
-                            onClick={onClose}
+                            onClick={handleTrackOrderClick}
                             className="w-full bg-black text-white font-bold py-4 px-6 rounded-xl hover:bg-gray-800 transition-all"
                         >
                             Acompanhar Pedido
