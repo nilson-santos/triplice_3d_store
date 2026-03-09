@@ -81,6 +81,22 @@ class OrderPixCreateSchema(Schema):
     shipping_address_state: str | None = None
     items: List[OrderItemSchema]
 
+class OrderCardCreateSchema(Schema):
+    customer_cpf: str
+    token: str
+    payment_method_id: str
+    issuer_id: str | None = None
+    installments: int = 1
+    shipping_type: str = "PICKUP_STORE"
+    shipping_address_zipcode: str | None = None
+    shipping_address_street: str | None = None
+    shipping_address_number: str | None = None
+    shipping_address_complement: str | None = None
+    shipping_address_neighborhood: str | None = None
+    shipping_address_city: str | None = None
+    shipping_address_state: str | None = None
+    items: List[OrderItemSchema]
+
 class TrackingRequestSchema(Schema):
     customer_email: str
 
@@ -94,6 +110,7 @@ class TrackedOrderSchema(Schema):
     order_number: str
     status: str
     payment_status: str | None = None
+    payment_method: str | None = None
     created_at: str
     items: List[TrackedProductSchema]
     total: float
@@ -373,6 +390,149 @@ def checkout_pix(request, payload: OrderPixCreateSchema):
     }
 
 
+@api.post("/checkout/card", response={200: OrderResponseSchema, 400: ErrorResponseSchema, 502: ErrorResponseSchema}, auth=JWTAuth())
+def checkout_card(request, payload: OrderCardCreateSchema):
+    user = request.user
+    sdk = mercadopago.SDK(getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', ''))
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    
+    clean_cpf = ''.join(filter(str.isdigit, payload.customer_cpf))
+
+    payload_address = {
+        "zipcode": payload.shipping_address_zipcode,
+        "street": payload.shipping_address_street,
+        "number": payload.shipping_address_number,
+        "complement": payload.shipping_address_complement,
+        "neighborhood": payload.shipping_address_neighborhood,
+        "city": payload.shipping_address_city,
+        "state": payload.shipping_address_state,
+    }
+    shipping_type = (payload.shipping_type or "PICKUP_STORE").strip().upper()
+
+    if shipping_type not in {"PICKUP_STORE", "FREE_DELIVERY_FOZ"}:
+        return 400, {"error": "Tipo de frete inválido."}
+
+    if shipping_type == "FREE_DELIVERY_FOZ":
+        if not _has_complete_address(payload_address):
+            return 400, {"error": "Para entrega em Foz do Iguaçu, preencha CEP, rua, número, bairro, cidade e estado."}
+
+        payload_city = _normalize_text(payload_address.get("city"))
+        if payload_city != "foz do iguacu":
+            return 400, {"error": "Entrega grátis disponível apenas para endereços em Foz do Iguaçu. Selecione retirada na loja."}
+
+        profile.registration_address_zipcode = payload_address["zipcode"]
+        profile.registration_address_street = payload_address["street"]
+        profile.registration_address_number = payload_address["number"]
+        profile.registration_address_complement = payload_address["complement"]
+        profile.registration_address_neighborhood = payload_address["neighborhood"]
+        profile.registration_address_city = payload_address["city"]
+        profile.registration_address_state = payload_address["state"]
+        profile.save()
+
+    order_shipping_address = (
+        {
+            "shipping_address_zipcode": profile.registration_address_zipcode,
+            "shipping_address_street": profile.registration_address_street,
+            "shipping_address_number": profile.registration_address_number,
+            "shipping_address_complement": profile.registration_address_complement,
+            "shipping_address_neighborhood": profile.registration_address_neighborhood,
+            "shipping_address_city": profile.registration_address_city,
+            "shipping_address_state": profile.registration_address_state,
+        }
+        if shipping_type == "FREE_DELIVERY_FOZ"
+        else {
+            "shipping_address_zipcode": None,
+            "shipping_address_street": None,
+            "shipping_address_number": None,
+            "shipping_address_complement": None,
+            "shipping_address_neighborhood": None,
+            "shipping_address_city": None,
+            "shipping_address_state": None,
+        }
+    )
+
+    order = Order.objects.create(
+        user=user,
+        customer_name=user.first_name or user.username,
+        customer_email=user.email,
+        customer_phone=getattr(profile, 'phone', '') or '',
+        customer_cpf=clean_cpf,
+        shipping_type=shipping_type,
+        **order_shipping_address,
+        status='PENDING'
+    )
+    
+    total_price = 0
+    for item in payload.items:
+        product = get_object_or_404(Product, id=item.product_id)
+        OrderItem.objects.create(
+            order=order,
+            product=product,
+            quantity=item.quantity,
+            price_at_time=product.price
+        )
+        total_price += float(product.price) * item.quantity
+
+    payment_data = {
+        "transaction_amount": float(total_price),
+        "token": payload.token,
+        "description": f"Pedido #{order.order_number} - Triplice 3D",
+        "installments": payload.installments,
+        "payment_method_id": payload.payment_method_id,
+        "payer": {
+            "email": user.email,
+            "first_name": user.first_name,
+            "identification": {
+                "type": "CPF",
+                "number": clean_cpf
+            }
+        },
+        "external_reference": str(order.id)
+    }
+    
+    if payload.issuer_id:
+        payment_data["issuer_id"] = payload.issuer_id
+    
+    try:
+        payment_response = sdk.payment().create(payment_data)
+        payment = payment_response.get("response", {})
+        if not isinstance(payment, dict):
+            return 502, {"error": "Falha ao processar cartão no provedor de pagamento."}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return 502, {"error": f"Erro interno MP: {str(e)}"}
+    
+    mp_status = _normalize_payment_status(payment.get("status"))
+    if mp_status:
+        if payment.get("id") is not None:
+            order.payment_id = str(payment.get("id"))
+        order.payment_status = mp_status
+        if payment.get("payment_method_id") is not None:
+            order.payment_method = str(payment.get("payment_method_id"))
+
+        if mp_status == "approved":
+            order.status = 'CONFIRMED'
+        elif mp_status in {"rejected", "cancelled"}:
+            order.status = 'CANCELLED'
+        else:
+            order.status = 'PENDING'
+            
+        order.save()
+    else:
+        # Pega a mensagem de erro do MP se existir
+        error_message = "Falha ao processar cartão no provedor de pagamento."
+        if payment.get('message'):
+            error_message = payment.get('message')
+        return 502, {"error": error_message}
+            
+    return {
+        "id": order.id,
+        "order_number": order.order_number,
+        "payment_status": mp_status
+    }
+
+
 @api.post("/checkout/pix/{order_id}/regenerate", response={200: OrderResponseSchema, 502: ErrorResponseSchema}, auth=JWTAuth())
 def regenerate_checkout_pix(request, order_id: UUID):
     user = request.user
@@ -493,6 +653,7 @@ def track_orders(request, payload: TrackingRequestSchema):
             "order_number": order.order_number,
             "status": order.status,
             "payment_status": _normalize_payment_status(order.payment_status),
+            "payment_method": order.payment_method,
             "created_at": order.created_at.isoformat(),
             "items": items,
             "total": total
@@ -524,6 +685,7 @@ def my_orders(request):
             "order_number": order.order_number,
             "status": order.status,
             "payment_status": _normalize_payment_status(order.payment_status),
+            "payment_method": order.payment_method,
             "created_at": order.created_at.isoformat(),
             "items": items,
             "total": total

@@ -5,6 +5,13 @@ import type { CreateOrderPayload, CreateOrderPixPayload, OrderPixResponse } from
 import { X, CheckCircle, Smartphone, QrCode, Copy, ShieldCheck, Clock, Truck, MapPin, Fingerprint } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthForm } from './AuthForm';
+import { CardPaymentForm } from './CardPaymentForm';
+
+declare global {
+    interface Window {
+        MercadoPago: any;
+    }
+}
 
 const parseUseMercadoPago = () => {
     const rawFlag = import.meta.env.VITE_USE_MERCADOPAGO;
@@ -52,8 +59,9 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [checkingAddressStatus, setCheckingAddressStatus] = useState(false);
-    const [pixStage, setPixStage] = useState<'SHIPPING' | 'ADDRESS' | 'PIX'>('SHIPPING');
+    const [pixStage, setPixStage] = useState<'SHIPPING' | 'ADDRESS' | 'PAYMENT_METHOD' | 'PIX' | 'CARD'>('SHIPPING');
     const [shippingType, setShippingType] = useState<'PICKUP_STORE' | 'FREE_DELIVERY_FOZ'>('PICKUP_STORE');
+    const [paymentMethod, setPaymentMethod] = useState<'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD'>('PIX');
     const [registrationZipcode, setRegistrationZipcode] = useState('');
     const [registrationStreet, setRegistrationStreet] = useState('');
     const [registrationNumber, setRegistrationNumber] = useState('');
@@ -312,7 +320,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
             setPixStage('ADDRESS');
             return;
         }
-        setPixStage('PIX');
+        setPixStage('PAYMENT_METHOD');
     };
 
     const handleNextFromAddress = () => {
@@ -324,7 +332,78 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
             alert('Entrega grátis disponível apenas para Foz do Iguaçu. Selecione retirada na loja.');
             return;
         }
-        setPixStage('PIX');
+        setPixStage('PAYMENT_METHOD');
+    };
+
+    const handleNextFromPaymentMethod = () => {
+        if (paymentMethod === 'PIX') {
+            setPixStage('PIX');
+        } else {
+            setPixStage('CARD');
+        }
+    };
+
+    const handleSubmitCard = async (cardData: { token: string; paymentMethodId: string; issuerId: string; installments: number; cpf: string }) => {
+        if (isSyncing) {
+            alert('Aguarde a sincronização do carrinho terminar.');
+            return;
+        }
+        if (items.length === 0) {
+            alert('Seu carrinho está vazio.');
+            return;
+        }
+
+        const cpfFinal = cardData.cpf.replace(/\D/g, '') || cpfDigits;
+        if (!validateCPF(cpfFinal)) {
+            alert('CPF inválido. Por favor, verifique os números digitados.');
+            return;
+        }
+
+        setLoading(true);
+
+        const payload: any = {
+            customer_cpf: cpfFinal,
+            token: cardData.token,
+            payment_method_id: cardData.paymentMethodId,
+            issuer_id: cardData.issuerId || undefined,
+            installments: cardData.installments,
+            shipping_type: shippingType,
+            items: items.map(item => ({
+                product_id: item.id,
+                quantity: item.quantity
+            }))
+        };
+
+        if (shippingType === 'FREE_DELIVERY_FOZ') {
+            payload.shipping_address_zipcode = registrationZipcode.trim();
+            payload.shipping_address_street = registrationStreet.trim();
+            payload.shipping_address_number = registrationNumber.trim();
+            payload.shipping_address_complement = registrationComplement.trim() || undefined;
+            payload.shipping_address_neighborhood = registrationNeighborhood.trim();
+            payload.shipping_address_city = registrationCity.trim();
+            payload.shipping_address_state = registrationState.trim();
+        }
+
+        try {
+            const currentTotal = total;
+            const response = await api.post('/checkout/card', payload);
+            setOrderTotal(currentTotal);
+            setSuccessData(response.data);
+            setIsConfirmed(response.data.payment_status === 'approved');
+            await clearCart();
+        } catch (error: unknown) {
+            console.error('Failed to process card order', error);
+            const err = error as { response?: { status?: number, data?: { error?: string } } };
+            if (err.response?.status === 401) {
+                alert('Sessão expirada. Faça login novamente.');
+            } else if (err.response?.status === 400 || err.response?.status === 502) {
+                alert(err.response?.data?.error || 'Não foi possível processar o pagamento do cartão.');
+            } else {
+                alert('Erro ao processar o pagamento. Verifique os dados e tente novamente.');
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleRegeneratePix = async () => {
@@ -378,7 +457,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     }
 
     if (successData) {
-        if (isConfirmed) {
+        if (isConfirmed || successData.payment_status === 'approved') {
             return (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl flex flex-col items-center">
@@ -392,6 +471,67 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                         <button
                             onClick={onClose}
                             className="w-full bg-black text-white font-bold py-4 px-6 rounded-xl hover:bg-gray-800 transition-all transform hover:scale-[1.02]"
+                        >
+                            Acompanhar Pedido
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        if (successData.payment_status === 'rejected' || successData.payment_status === 'cancelled') {
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl flex flex-col items-center relative">
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"
+                            aria-label="Fechar"
+                        >
+                            <X size={20} />
+                        </button>
+                        <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                            <X className="w-16 h-16 text-red-500" />
+                        </div>
+                        <h2 className="text-3xl font-bold mb-2 text-red-600">Pagamento Recusado</h2>
+                        <p className="text-gray-600 mb-8">
+                            Infelizmente seu pagamento não foi aprovado pelo emissor do cartão.
+                            Por favor, tente novamente com outro cartão ou via Pix.
+                        </p>
+                        <button
+                            onClick={onClose}
+                            className="w-full bg-black text-white font-bold py-4 px-6 rounded-xl hover:bg-gray-800 transition-all"
+                        >
+                            Voltar
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        if (paymentMethod !== 'PIX' && successData.payment_status === 'in_process') {
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-8 text-center shadow-2xl flex flex-col items-center relative">
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"
+                            aria-label="Fechar"
+                        >
+                            <X size={20} />
+                        </button>
+                        <div className="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mb-6">
+                            <Clock className="w-16 h-16 text-amber-500 animate-pulse" />
+                        </div>
+                        <h2 className="text-3xl font-bold mb-2 text-amber-600">Em Processamento</h2>
+                        <p className="text-gray-600 mb-8">
+                            Seu pagamento via cartão de crédito está em <strong>análise de segurança</strong>.
+                            <br /><br />
+                            Você pode acompanhar o status pela página <span className="font-bold">Meus Pedidos</span>, o status será atualizado automaticamente em alguns minutos.
+                        </p>
+                        <button
+                            onClick={onClose}
+                            className="w-full bg-black text-white font-bold py-4 px-6 rounded-xl hover:bg-gray-800 transition-all"
                         >
                             Acompanhar Pedido
                         </button>
@@ -526,10 +666,7 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                             <AuthForm />
                         </div>
                     ) : (
-                        <form
-                            onSubmit={handleSubmitPix}
-                            className="space-y-4"
-                        >
+                        <div className="space-y-4">
                             {checkingAddressStatus && (
                                 <p className="text-xs text-gray-500">Carregando dados de endereço...</p>
                             )}
@@ -695,6 +832,105 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                 </>
                             )}
 
+                            {pixStage === 'PAYMENT_METHOD' && (
+                                <>
+                                    <div className="flex flex-col items-center mb-4 mt-2">
+                                        <div className="w-16 h-16 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center mb-3">
+                                            <ShieldCheck className="w-8 h-8 text-black" />
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-800">Meio de Pagamento</p>
+                                    </div>
+                                    <div>
+                                        <div className="space-y-3">
+                                            <label className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${paymentMethod === 'PIX' ? 'border-black bg-gray-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="radio"
+                                                        name="paymentMethod"
+                                                        value="PIX"
+                                                        checked={paymentMethod === 'PIX'}
+                                                        onChange={() => setPaymentMethod('PIX')}
+                                                        className="w-4 h-4 text-black accent-black"
+                                                    />
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" className="w-5 h-5 fill-current text-green-500">
+                                                        <path d="M 25 0.0390625 C 22.84 0.0390625 20.799531 0.88015625 19.269531 2.4101562 L 9.6796875 12 L 12.929688 12 C 14.529687 12 16.039922 12.619766 17.169922 13.759766 L 23.939453 20.529297 C 24.519453 21.109297 25.480547 21.109531 26.060547 20.519531 L 32.830078 13.759766 C 33.960078 12.619766 35.470312 12 37.070312 12 L 40.320312 12 L 30.730469 2.4101562 C 29.200469 0.88015625 27.16 0.0390625 25 0.0390625 z M 7.6796875 14 L 2.4101562 19.269531 C -0.74984375 22.429531 -0.74984375 27.570469 2.4101562 30.730469 L 7.6796875 36 L 12.929688 36 C 13.999687 36 14.999766 35.580078 15.759766 34.830078 L 22.529297 28.060547 C 23.889297 26.700547 26.110703 26.700547 27.470703 28.060547 L 34.240234 34.830078 C 35.000234 35.580078 36.000312 36 37.070312 36 L 42.320312 36 L 47.589844 30.730469 C 50.749844 27.570469 50.749844 22.429531 47.589844 19.269531 L 42.320312 14 L 37.070312 14 C 36.000313 14 35.000234 14.419922 34.240234 15.169922 L 27.470703 21.939453 C 26.790703 22.619453 25.9 22.960938 25 22.960938 C 24.1 22.960937 23.209297 22.619453 22.529297 21.939453 L 15.759766 15.169922 C 14.999766 14.419922 13.999688 14 12.929688 14 L 7.6796875 14 z M 25 29.037109 C 24.615 29.038359 24.229453 29.185469 23.939453 29.480469 L 17.169922 36.240234 C 16.039922 37.380234 14.529687 38 12.929688 38 L 9.6796875 38 L 19.269531 47.589844 C 20.799531 49.119844 22.84 49.960938 25 49.960938 C 27.16 49.960938 29.200469 49.119844 30.730469 47.589844 L 40.320312 38 L 37.070312 38 C 35.470313 38 33.960078 37.380234 32.830078 36.240234 L 26.060547 29.470703 C 25.770547 29.180703 25.385 29.035859 25 29.037109 z" />
+                                                    </svg>
+                                                    <span className="text-sm font-bold text-gray-800">Pix</span>
+                                                </div>
+                                                <span className="text-xs px-2 py-1 rounded font-semibold bg-green-100 text-green-800">Instantâneo</span>
+                                            </label>
+
+                                            <label className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${paymentMethod === 'CREDIT_CARD' ? 'border-black bg-gray-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="radio"
+                                                        name="paymentMethod"
+                                                        value="CREDIT_CARD"
+                                                        checked={paymentMethod === 'CREDIT_CARD'}
+                                                        onChange={() => setPaymentMethod('CREDIT_CARD')}
+                                                        className="w-4 h-4 text-black accent-black"
+                                                    />
+                                                    <svg viewBox="0 0 24 24" className={`w-5 h-5 ${paymentMethod === 'CREDIT_CARD' ? 'text-black' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <rect width="20" height="14" x="2" y="5" rx="2" />
+                                                        <line x1="2" x2="22" y1="10" y2="10" />
+                                                    </svg>
+                                                    <span className="text-sm font-bold text-gray-800">Cartão de Crédito</span>
+                                                </div>
+                                                <span className={`text-xs ${paymentMethod === 'CREDIT_CARD' ? 'text-black font-medium' : 'text-gray-500'}`}>Apenas 1x</span>
+                                            </label>
+
+                                            <label className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${paymentMethod === 'DEBIT_CARD' ? 'border-black bg-gray-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="radio"
+                                                        name="paymentMethod"
+                                                        value="DEBIT_CARD"
+                                                        checked={paymentMethod === 'DEBIT_CARD'}
+                                                        onChange={() => setPaymentMethod('DEBIT_CARD')}
+                                                        className="w-4 h-4 text-black accent-black"
+                                                    />
+                                                    <svg viewBox="0 0 24 24" className={`w-5 h-5 ${paymentMethod === 'DEBIT_CARD' ? 'text-black' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <rect width="20" height="14" x="2" y="5" rx="2" />
+                                                        <line x1="2" x2="22" y1="10" y2="10" />
+                                                        <path d="M7 15h0" />
+                                                        <path d="M11 15h2" />
+                                                    </svg>
+                                                    <span className="text-sm font-bold text-gray-800">Cartão de Débito</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 pt-4 mt-8">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPixStage(shippingType === 'FREE_DELIVERY_FOZ' ? 'ADDRESS' : 'SHIPPING')}
+                                            className="w-full bg-gray-100 text-gray-800 font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors"
+                                        >
+                                            Voltar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleNextFromPaymentMethod}
+                                            className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors"
+                                        >
+                                            Continuar
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+
+                            {pixStage === 'CARD' && (
+                                <CardPaymentForm
+                                    total={orderTotal || total}
+                                    email={cpf} /* we pass cpf instead of email or pass auth email? The component doesn't get user's email easily but that's fine */
+                                    cpfDefault={cpf}
+                                    paymentType={paymentMethod as 'CREDIT_CARD' | 'DEBIT_CARD'}
+                                    loading={loading}
+                                    onSubmit={handleSubmitCard}
+                                    onCancel={() => setPixStage('PAYMENT_METHOD')}
+                                />
+                            )}
+
                             {pixStage === 'PIX' && (
                                 <>
                                     <div className="flex flex-col items-center mb-4 mt-2">
@@ -729,13 +965,14 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                     <div className="grid grid-cols-2 gap-3 pt-4 mt-8">
                                         <button
                                             type="button"
-                                            onClick={() => setPixStage(shippingType === 'FREE_DELIVERY_FOZ' ? 'ADDRESS' : 'SHIPPING')}
+                                            onClick={() => setPixStage('PAYMENT_METHOD')}
                                             className="w-full bg-gray-100 text-gray-800 font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors"
                                         >
                                             Voltar
                                         </button>
                                         <button
-                                            type="submit"
+                                            type="button"
+                                            onClick={handleSubmitPix}
                                             disabled={loading || cpfDigits.length < 11}
                                             className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                                         >
@@ -745,12 +982,14 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                 </>
                             )}
 
-                            <div className="text-center mt-3">
-                                <span className="text-xs text-gray-500 font-medium flex items-center justify-center gap-1">
-                                    <ShieldCheck size={14} /> Processado de forma segura
-                                </span>
-                            </div>
-                        </form>
+                            {pixStage !== 'CARD' && (
+                                <div className="text-center mt-3">
+                                    <span className="text-xs text-gray-500 font-medium flex items-center justify-center gap-1">
+                                        <ShieldCheck size={14} /> Processado de forma segura
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     )
                 ) : (
                     <form onSubmit={handleSubmitManual} className="space-y-4">

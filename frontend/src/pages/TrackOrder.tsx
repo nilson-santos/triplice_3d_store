@@ -191,8 +191,16 @@ export const TrackOrder = () => {
                                                     <h3 className="font-black text-xl text-gray-900 group-hover:text-black transition-colors leading-none">
                                                         N° {order.order_number}
                                                     </h3>
-                                                    <div className="flex items-center">
+                                                    <div className="flex items-center gap-2">
                                                         <StatusBadge status={order.status} paymentStatus={order.payment_status} />
+                                                        {order.payment_method && (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500 border border-gray-200">
+                                                                {order.payment_method === 'pix' ? 'Pix' :
+                                                                    order.payment_method === 'credit_card' || order.payment_method === 'master' || order.payment_method === 'visa' || order.payment_method === 'amex' ? 'Crédito' :
+                                                                        order.payment_method === 'debit_card' || order.payment_method === 'maestro' ? 'Débito' :
+                                                                            order.payment_method}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-4 text-sm text-gray-400 font-medium">
