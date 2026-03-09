@@ -4,6 +4,7 @@ import { Heart, ShoppingCart, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../api';
+import { dispatchFlyToCart } from '../utils/cartFlyToCart';
 
 interface FavoriteProduct {
     product_id: number;
@@ -36,7 +37,9 @@ export const Favorites = () => {
         setFavorites(prev => prev.filter(f => f.product_id !== productId));
     };
 
-    const handleAddToCart = async (favorite: FavoriteProduct) => {
+    const handleAddToCart = async (favorite: FavoriteProduct, event: React.MouseEvent<HTMLButtonElement>) => {
+        const button = event.currentTarget;
+        dispatchFlyToCart(button, favorite.product_image);
         await addToCart({
             id: favorite.product_id,
             name: favorite.product_name,
@@ -108,7 +111,7 @@ export const Favorites = () => {
                                 </p>
                                 <div className="flex gap-2 mt-auto pt-1">
                                     <button
-                                        onClick={() => handleAddToCart(fav)}
+                                        onClick={(event) => handleAddToCart(fav, event)}
                                         className={`flex-1 text-xs font-bold py-2 rounded-lg transition flex items-center justify-center gap-1 ${recentlyAddedId === fav.product_id ? 'bg-emerald-600 text-white' : 'bg-black text-white hover:bg-gray-800'}`}
                                     >
                                         {recentlyAddedId === fav.product_id ? <Check size={14} /> : <ShoppingCart size={14} />}

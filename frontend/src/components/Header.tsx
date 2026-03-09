@@ -11,6 +11,16 @@ import logo from '../assets/logo.png';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getCategories } from '../api';
 import type { Category } from '../api';
+import type { FlyToCartDetail } from '../utils/cartFlyToCart';
+
+interface FlyingCartToken {
+    id: number;
+    image?: string | null;
+    originX: number;
+    originY: number;
+    targetX: number;
+    targetY: number;
+}
 
 export const Header = () => {
     const { items } = useCart();
@@ -24,10 +34,13 @@ export const Header = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const cartButtonRef = useRef<HTMLButtonElement>(null);
+    const pendingFlyFeedbackRef = useRef(false);
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
     const [showCartFeedback, setShowCartFeedback] = useState(false);
+    const [flyingTokens, setFlyingTokens] = useState<FlyingCartToken[]>([]);
     const adminUrl = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://triplice3d.com.br/api')).replace(/\/api\/?$/, '/admin/');
     const totalItemsInCart = items.reduce((sum, item) => sum + item.quantity, 0);
     const distinctItemsInCart = items.length;
@@ -60,14 +73,56 @@ export const Header = () => {
     }, [isSearchOpen]);
 
     useEffect(() => {
-        if (totalItemsInCart > prevCartCountRef.current) {
+        const triggerCartFeedback = () => {
             setShowCartFeedback(true);
-            const timer = window.setTimeout(() => setShowCartFeedback(false), 1200);
+            window.setTimeout(() => setShowCartFeedback(false), 1200);
+        };
+
+        if (totalItemsInCart > prevCartCountRef.current) {
+            if (!pendingFlyFeedbackRef.current) {
+                triggerCartFeedback();
+            }
             prevCartCountRef.current = totalItemsInCart;
-            return () => window.clearTimeout(timer);
+            return;
         }
         prevCartCountRef.current = totalItemsInCart;
     }, [totalItemsInCart]);
+
+    useEffect(() => {
+        const handleFlyToCart = (event: Event) => {
+            if (!cartButtonRef.current) return;
+
+            const customEvent = event as CustomEvent<FlyToCartDetail>;
+            const cartRect = cartButtonRef.current.getBoundingClientRect();
+            const tokenId = Date.now() + Math.floor(Math.random() * 1000);
+            pendingFlyFeedbackRef.current = true;
+
+            setFlyingTokens(prev => [
+                ...prev,
+                {
+                    id: tokenId,
+                    image: customEvent.detail.image,
+                    originX: customEvent.detail.originX,
+                    originY: customEvent.detail.originY,
+                    targetX: cartRect.left + cartRect.width / 2,
+                    targetY: cartRect.top + cartRect.height / 2,
+                }
+            ]);
+
+            window.setTimeout(() => {
+                setShowCartFeedback(true);
+                window.setTimeout(() => setShowCartFeedback(false), 1200);
+                pendingFlyFeedbackRef.current = false;
+            }, 760);
+
+            window.setTimeout(() => {
+                setFlyingTokens(prev => prev.filter(token => token.id !== tokenId));
+            }, 850);
+        };
+
+        window.addEventListener('triplice:fly-to-cart', handleFlyToCart as EventListener);
+        return () => window.removeEventListener('triplice:fly-to-cart', handleFlyToCart as EventListener);
+    }, []);
 
     const handleHomeClick = (e: React.MouseEvent) => {
         if (location.pathname === '/') {
@@ -314,6 +369,7 @@ export const Header = () => {
 
                         {/* Cart */}
                         <motion.button
+                            ref={cartButtonRef}
                             onClick={() => setIsCartOpen(true)}
                             className="relative p-2 hover:bg-gray-100 rounded-full transition"
                             animate={showCartFeedback ? { scale: [1, 1.18, 0.96, 1], rotate: [0, -8, 8, 0] } : { scale: 1, rotate: 0 }}
@@ -451,6 +507,38 @@ export const Header = () => {
                     onClose={() => setIsCheckoutOpen(false)}
                 />
             </CheckoutErrorBoundary>
+
+            <AnimatePresence>
+                {flyingTokens.map(token => (
+                    <motion.div
+                        key={token.id}
+                        initial={{
+                            x: token.originX - 28,
+                            y: token.originY - 28,
+                            scale: 1,
+                            opacity: 1,
+                        }}
+                        animate={{
+                            x: [token.originX - 28, token.originX - 10, token.targetX - 10],
+                            y: [token.originY - 28, token.originY - 92, token.targetY - 10],
+                            scale: [1, 0.92, 0.38],
+                            opacity: [1, 1, 0.2],
+                            rotate: [0, 10, -12, 0],
+                        }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
+                        className="pointer-events-none fixed left-0 top-0 z-[140] h-14 w-14 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_12px_30px_rgba(0,0,0,0.22)]"
+                    >
+                        {token.image ? (
+                            <img src={token.image} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-black text-white">
+                                <ShoppingCart size={22} />
+                            </div>
+                        )}
+                    </motion.div>
+                ))}
+            </AnimatePresence>
         </>
     );
 };

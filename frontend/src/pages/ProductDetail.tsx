@@ -6,6 +6,7 @@ import { api, getColors } from '../api';
 import type { Product, Color } from '../api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { dispatchFlyToCart } from '../utils/cartFlyToCart';
 
 export const ProductDetail = () => {
     const { slug } = useParams();
@@ -51,8 +52,10 @@ export const ProductDetail = () => {
         fetchProduct();
     }, [slug]);
 
-    const handleAddToCart = async () => {
+    const handleAddToCart = async (event: React.MouseEvent<HTMLButtonElement>) => {
         if (product) {
+            const button = event.currentTarget;
+            dispatchFlyToCart(button, mainImage || product.image);
             await addToCart(product, quantity);
             setJustAdded(true);
             window.setTimeout(() => setJustAdded(false), 1200);
