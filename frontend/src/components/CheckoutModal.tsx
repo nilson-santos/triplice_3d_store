@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { api, getProfileAddressStatus } from '../api';
+import { api, getProfileAddressStatus, lookupZipcode } from '../api';
 import type { CreateOrderPayload, CreateOrderPixPayload, OrderPixResponse } from '../api';
 import { X, CheckCircle, Smartphone, QrCode, Copy, ShieldCheck, Clock, Truck, MapPin, Fingerprint } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -23,6 +23,20 @@ const parseUseMercadoPago = () => {
 };
 
 const USE_MERCADOPAGO = parseUseMercadoPago();
+
+type AutoFilledAddressField = 'street' | 'neighborhood' | 'city' | 'state';
+
+const createAddressFieldLocks = (): Record<AutoFilledAddressField, string | null> => ({
+    street: null,
+    neighborhood: null,
+    city: null,
+    state: null,
+});
+
+const formatZipcode = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+};
 
 const validateCPF = (cpf: string) => {
     const digits = cpf.replace(/\D/g, '');
@@ -71,6 +85,8 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
     const [registrationNeighborhood, setRegistrationNeighborhood] = useState('');
     const [registrationCity, setRegistrationCity] = useState('');
     const [registrationState, setRegistrationState] = useState('');
+    const [zipcodeLookupState, setZipcodeLookupState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [zipcodeLookupMessage, setZipcodeLookupMessage] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [successData, setSuccessData] = useState<OrderPixResponse | null>(null);
@@ -83,6 +99,9 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
 
     const cpfDigits = cpf.replace(/\D/g, '');
     const zipcodeDigits = registrationZipcode.replace(/\D/g, '');
+    const activeZipcodeRef = useRef<string | null>(null);
+    const lastZipLookupAttemptRef = useRef<string | null>(null);
+    const addressFieldLocksRef = useRef<Record<AutoFilledAddressField, string | null>>(createAddressFieldLocks());
 
     const qrImageSrc = successData?.qr_code_base64
         ? (successData.qr_code_base64.startsWith('data:image')
@@ -145,6 +164,17 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         registrationCity.trim().length > 0 &&
         registrationState.trim().length > 0;
 
+    const clearAutofilledAddressFields = useCallback(() => {
+        setRegistrationStreet('');
+        setRegistrationNeighborhood('');
+        setRegistrationCity('');
+        setRegistrationState('');
+    }, []);
+
+    const lockAddressFieldForCurrentZipcode = useCallback((field: AutoFilledAddressField) => {
+        addressFieldLocksRef.current[field] = zipcodeDigits.length === 8 ? zipcodeDigits : null;
+    }, [zipcodeDigits]);
+
     useEffect(() => {
         if (!isOpen || !USE_MERCADOPAGO || !isAuthenticated) {
             return;
@@ -157,13 +187,18 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                 const status = await getProfileAddressStatus();
                 if (cancelled) return;
 
-                setRegistrationZipcode(status.registration_address_zipcode ?? '');
+                const nextZipcode = formatZipcode(status.registration_address_zipcode ?? '');
+
+                setRegistrationZipcode(nextZipcode);
                 setRegistrationStreet(status.registration_address_street ?? '');
                 setRegistrationNumber(status.registration_address_number ?? '');
                 setRegistrationComplement(status.registration_address_complement ?? '');
                 setRegistrationNeighborhood(status.registration_address_neighborhood ?? '');
                 setRegistrationCity(status.registration_address_city ?? '');
                 setRegistrationState(status.registration_address_state ?? '');
+                activeZipcodeRef.current = nextZipcode.replace(/\D/g, '') || null;
+                lastZipLookupAttemptRef.current = null;
+                addressFieldLocksRef.current = createAddressFieldLocks();
             } catch (err) {
                 // Ignore error, fallback to empty fields
                 console.error('Address status error', err);
@@ -180,6 +215,99 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
             cancelled = true;
         };
     }, [isAuthenticated, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        if (zipcodeDigits.length !== 8) {
+            setZipcodeLookupState('idle');
+            setZipcodeLookupMessage('');
+            lastZipLookupAttemptRef.current = null;
+            return;
+        }
+
+        if (activeZipcodeRef.current !== zipcodeDigits) {
+            addressFieldLocksRef.current = createAddressFieldLocks();
+            clearAutofilledAddressFields();
+            activeZipcodeRef.current = zipcodeDigits;
+            lastZipLookupAttemptRef.current = null;
+        }
+
+        if (lastZipLookupAttemptRef.current === zipcodeDigits) {
+            return;
+        }
+
+        const abortController = new AbortController();
+        lastZipLookupAttemptRef.current = zipcodeDigits;
+        setZipcodeLookupState('loading');
+        setZipcodeLookupMessage('Buscando endereço pelo CEP...');
+
+        lookupZipcode(zipcodeDigits, abortController.signal)
+            .then((result) => {
+                if (!result) {
+                    setZipcodeLookupState('error');
+                    setZipcodeLookupMessage('CEP não encontrado. Confira o número digitado.');
+                    return;
+                }
+
+                const currentZipcode = zipcodeDigits;
+                let skippedManualFields = 0;
+
+                if (result.street) {
+                    if (addressFieldLocksRef.current.street === currentZipcode) {
+                        skippedManualFields += 1;
+                    } else {
+                        setRegistrationStreet(result.street);
+                    }
+                }
+
+                if (result.neighborhood) {
+                    if (addressFieldLocksRef.current.neighborhood === currentZipcode) {
+                        skippedManualFields += 1;
+                    } else {
+                        setRegistrationNeighborhood(result.neighborhood);
+                    }
+                }
+
+                if (result.city) {
+                    if (addressFieldLocksRef.current.city === currentZipcode) {
+                        skippedManualFields += 1;
+                    } else {
+                        setRegistrationCity(result.city);
+                    }
+                }
+
+                if (result.state) {
+                    if (addressFieldLocksRef.current.state === currentZipcode) {
+                        skippedManualFields += 1;
+                    } else {
+                        setRegistrationState(result.state);
+                    }
+                }
+
+                setZipcodeLookupState('success');
+                setZipcodeLookupMessage(
+                    skippedManualFields > 0
+                        ? 'CEP localizado. Mantive os campos que você já editou manualmente.'
+                        : 'Endereço preenchido automaticamente. Confira os dados antes de continuar.'
+                );
+            })
+            .catch((error: unknown) => {
+                if ((error as { name?: string }).name === 'CanceledError') {
+                    return;
+                }
+
+                console.error('Zipcode lookup error', error);
+                setZipcodeLookupState('error');
+                setZipcodeLookupMessage('Não foi possível buscar o CEP agora. Preencha o endereço manualmente.');
+            });
+
+        return () => {
+            abortController.abort();
+        };
+    }, [clearAutofilledAddressFields, isOpen, zipcodeDigits]);
 
     useEffect(() => {
         if (isOpen) {
@@ -752,11 +880,14 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                                 placeholder="00000-000"
                                                 value={registrationZipcode}
                                                 onChange={(e) => {
-                                                    const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
-                                                    const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
-                                                    setRegistrationZipcode(formatted);
+                                                    setRegistrationZipcode(formatZipcode(e.target.value));
                                                 }}
                                             />
+                                            {zipcodeLookupState !== 'idle' && zipcodeLookupMessage && (
+                                                <p className={`mt-2 text-xs ${zipcodeLookupState === 'error' ? 'text-red-600' : zipcodeLookupState === 'loading' ? 'text-gray-500' : 'text-green-700'}`}>
+                                                    {zipcodeLookupMessage}
+                                                </p>
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
@@ -766,7 +897,10 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
                                                 placeholder="Ex: Rua das Flores"
                                                 value={registrationStreet}
-                                                onChange={(e) => setRegistrationStreet(e.target.value)}
+                                                onChange={(e) => {
+                                                    setRegistrationStreet(e.target.value);
+                                                    lockAddressFieldForCurrentZipcode('street');
+                                                }}
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
@@ -800,7 +934,10 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
                                                 placeholder="Ex: Centro"
                                                 value={registrationNeighborhood}
-                                                onChange={(e) => setRegistrationNeighborhood(e.target.value)}
+                                                onChange={(e) => {
+                                                    setRegistrationNeighborhood(e.target.value);
+                                                    lockAddressFieldForCurrentZipcode('neighborhood');
+                                                }}
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
@@ -812,7 +949,10 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
                                                     placeholder="Ex: Foz do Iguaçu"
                                                     value={registrationCity}
-                                                    onChange={(e) => setRegistrationCity(e.target.value)}
+                                                    onChange={(e) => {
+                                                        setRegistrationCity(e.target.value);
+                                                        lockAddressFieldForCurrentZipcode('city');
+                                                    }}
                                                 />
                                             </div>
                                             <div>
@@ -824,7 +964,10 @@ export const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition uppercase"
                                                     placeholder="PR"
                                                     value={registrationState}
-                                                    onChange={(e) => setRegistrationState(e.target.value.toUpperCase())}
+                                                    onChange={(e) => {
+                                                        setRegistrationState(e.target.value.toUpperCase());
+                                                        lockAddressFieldForCurrentZipcode('state');
+                                                    }}
                                                 />
                                             </div>
                                         </div>

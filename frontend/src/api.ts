@@ -109,6 +109,23 @@ export interface ProfileAddressStatus {
     registration_address_state: string | null;
 }
 
+interface ViaCepResponse {
+    cep?: string;
+    logradouro?: string;
+    bairro?: string;
+    localidade?: string;
+    uf?: string;
+    erro?: boolean;
+}
+
+export interface ZipcodeLookupResult {
+    zipcode: string;
+    street: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+}
+
 export const getCategories = async () => {
     const res = await api.get<Category[]>('/categories');
     return res.data;
@@ -127,6 +144,31 @@ export const regenerateOrderPix = async (orderId: string): Promise<OrderPixRespo
 export const getProfileAddressStatus = async (): Promise<ProfileAddressStatus> => {
     const res = await api.get<ProfileAddressStatus>('/auth/profile/address-status');
     return res.data;
+};
+
+export const lookupZipcode = async (zipcode: string, signal?: AbortSignal): Promise<ZipcodeLookupResult | null> => {
+    const digits = zipcode.replace(/\D/g, '').slice(0, 8);
+
+    if (digits.length !== 8) {
+        return null;
+    }
+
+    const res = await axios.get<ViaCepResponse>(`https://viacep.com.br/ws/${digits}/json/`, {
+        signal,
+        timeout: 5000,
+    });
+
+    if (res.data.erro) {
+        return null;
+    }
+
+    return {
+        zipcode: res.data.cep ?? digits,
+        street: res.data.logradouro?.trim() ?? '',
+        neighborhood: res.data.bairro?.trim() ?? '',
+        city: res.data.localidade?.trim() ?? '',
+        state: res.data.uf?.trim().toUpperCase() ?? '',
+    };
 };
 
 export const getOrderStatus = async (orderId: string): Promise<OrderStatusResponse> => {
