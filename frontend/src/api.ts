@@ -15,6 +15,62 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+let refreshInFlight: Promise<string | null> | null = null;
+
+const clearStoredAuth = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_refresh_token');
+    localStorage.removeItem('auth_user');
+    window.dispatchEvent(new Event('auth_logout'));
+};
+
+const refreshAccessToken = async (): Promise<string | null> => {
+    const refreshToken = localStorage.getItem('auth_refresh_token');
+    if (!refreshToken) {
+        return null;
+    }
+
+    try {
+        const res = await api.post<{ access: string }>('/auth/refresh', { refresh: refreshToken });
+        const newAccessToken = res.data.access;
+        localStorage.setItem('auth_token', newAccessToken);
+        return newAccessToken;
+    } catch {
+        clearStoredAuth();
+        return null;
+    }
+};
+
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const status = error?.response?.status;
+        const originalRequest = error?.config as (typeof error.config & { _retry?: boolean });
+        const requestUrl = originalRequest?.url ?? '';
+
+        if (status !== 401 || !originalRequest || originalRequest._retry || requestUrl.includes('/auth/refresh')) {
+            return Promise.reject(error);
+        }
+
+        originalRequest._retry = true;
+
+        if (!refreshInFlight) {
+            refreshInFlight = refreshAccessToken().finally(() => {
+                refreshInFlight = null;
+            });
+        }
+
+        const newToken = await refreshInFlight;
+        if (!newToken) {
+            return Promise.reject(error);
+        }
+
+        originalRequest.headers = originalRequest.headers ?? {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+    }
+);
+
 export interface Product {
     id: number;
     name: string;

@@ -14,7 +14,7 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
-    login: (token: string, name: string, email: string, verified: boolean, isStaff: boolean) => void;
+    login: (token: string, refreshToken: string, name: string, email: string, verified: boolean, isStaff: boolean) => void;
     logout: () => void;
     openAuthModal: (view?: 'login' | 'register') => void;
     closeAuthModal: () => void;
@@ -87,10 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const login = (newToken: string, name: string, email: string, verified: boolean, isStaff: boolean) => {
+    const login = (newToken: string, refreshToken: string, name: string, email: string, verified: boolean, isStaff: boolean) => {
         const newUser: User = { name, email, email_verified: verified, is_staff: isStaff };
 
         localStorage.setItem('auth_token', newToken);
+        localStorage.setItem('auth_refresh_token', refreshToken);
         localStorage.setItem('auth_user', JSON.stringify(newUser));
 
         setToken(newToken);
@@ -102,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = () => {
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_refresh_token');
         localStorage.removeItem('auth_user');
 
         setToken(null);

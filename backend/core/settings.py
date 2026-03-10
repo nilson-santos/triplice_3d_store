@@ -178,8 +178,8 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@triplice3d.co
 # Django Ninja JWT Configuration
 # Sets user token to never expire or a very long time
 NINJA_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=365*10), # "nunca vai expirar a não ser que ele queira"
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=365*10),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=90),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
     'UPDATE_LAST_LOGIN': False,

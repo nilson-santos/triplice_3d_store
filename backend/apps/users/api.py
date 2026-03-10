@@ -39,6 +39,14 @@ class TokenOut(Schema):
     is_staff: bool
 
 
+class RefreshIn(Schema):
+    refresh: str
+
+
+class AccessOut(Schema):
+    access: str
+
+
 class ProfileAddressStatusOut(Schema):
     has_registration_address: bool
     registration_address_zipcode: str | None = None
@@ -195,6 +203,23 @@ def request_code(request, payload: RequestCodeIn):
         pass 
         
     return 200, {"message": "Código enviado para seu e-mail."}
+
+
+@router.post("/refresh", response={200: AccessOut, 400: ErrorResponse})
+def refresh_access_token(request, payload: RefreshIn):
+    try:
+        refresh = RefreshToken(payload.refresh)
+        user_id = refresh.get("user_id")
+        if not user_id:
+            return 400, {"error": "Refresh token inválido"}
+
+        user = User.objects.filter(id=user_id, is_active=True).first()
+        if not user:
+            return 400, {"error": "Usuário inválido"}
+
+        return 200, {"access": str(refresh.access_token)}
+    except Exception:
+        return 400, {"error": "Refresh token inválido ou expirado"}
 
 
 @router.get("/profile/address-status", response=ProfileAddressStatusOut, auth=JWTAuth())
