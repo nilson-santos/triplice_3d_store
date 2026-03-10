@@ -23,7 +23,7 @@ interface FlyingCartToken {
 }
 
 export const Header = () => {
-    const { items } = useCart();
+    const { items, isSyncing } = useCart();
     const { isAuthenticated, user, openAuthModal, logout } = useAuth();
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -50,6 +50,8 @@ export const Header = () => {
     const prevCartCountRef = useRef(totalItemsInCart);
     const prevDistinctItemsRef = useRef(distinctItemsInCart);
     const latestDistinctItemsRef = useRef(distinctItemsInCart);
+    const hasHydratedCartRef = useRef(false);
+    const wasSyncingRef = useRef(isSyncing);
     const [displayedDistinctItems, setDisplayedDistinctItems] = useState(distinctItemsInCart);
 
     const selectedCategory = searchParams.get('category');
@@ -97,6 +99,22 @@ export const Header = () => {
     }, [dailyUniqueVisits, isLoadingDailyUniqueVisits, isUserMenuOpen, user?.is_staff]);
 
     useEffect(() => {
+        const syncJustFinished = wasSyncingRef.current && !isSyncing;
+        wasSyncingRef.current = isSyncing;
+
+        if (isSyncing) {
+            return;
+        }
+
+        if (!hasHydratedCartRef.current || syncJustFinished) {
+            prevCartCountRef.current = totalItemsInCart;
+            prevDistinctItemsRef.current = distinctItemsInCart;
+            latestDistinctItemsRef.current = distinctItemsInCart;
+            setDisplayedDistinctItems(distinctItemsInCart);
+            hasHydratedCartRef.current = true;
+            return;
+        }
+
         const triggerCartFeedback = () => {
             setShowCartFeedback(true);
             window.setTimeout(() => setShowCartFeedback(false), 1200);
@@ -110,9 +128,13 @@ export const Header = () => {
             return;
         }
         prevCartCountRef.current = totalItemsInCart;
-    }, [totalItemsInCart]);
+    }, [isSyncing, totalItemsInCart, distinctItemsInCart]);
 
     useEffect(() => {
+        if (isSyncing || !hasHydratedCartRef.current) {
+            return;
+        }
+
         latestDistinctItemsRef.current = distinctItemsInCart;
 
         if (distinctItemsInCart < prevDistinctItemsRef.current) {
@@ -126,7 +148,7 @@ export const Header = () => {
         }
 
         prevDistinctItemsRef.current = distinctItemsInCart;
-    }, [distinctItemsInCart]);
+    }, [distinctItemsInCart, isSyncing]);
 
     useEffect(() => {
         const handleFlyToCart = (event: Event) => {
