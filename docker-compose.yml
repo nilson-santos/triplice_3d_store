@@ -87,6 +87,7 @@ services:
       - "traefik.http.routers.triplice-frontend-http.rule=Host(`triplice3d.com.br`)"
       - "traefik.http.routers.triplice-frontend-http.entrypoints=web"
       - "traefik.http.routers.triplice-frontend-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
 networks:
   front-end:
