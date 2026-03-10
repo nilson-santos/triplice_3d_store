@@ -35,6 +35,7 @@ export const Header = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const searchInputRef = useRef<HTMLInputElement>(null);
     const cartButtonRef = useRef<HTMLButtonElement>(null);
+    const userMenuRef = useRef<HTMLDivElement>(null);
     const pendingFlyFeedbackRef = useRef(false);
     const badgeSyncTimeoutRef = useRef<number | null>(null);
 
@@ -97,6 +98,23 @@ export const Header = () => {
                 setIsLoadingDailyUniqueVisits(false);
             });
     }, [dailyUniqueVisits, isLoadingDailyUniqueVisits, isUserMenuOpen, user?.is_staff]);
+
+    useEffect(() => {
+        if (!isUserMenuOpen) return;
+
+        const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+            if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+                setIsUserMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [isUserMenuOpen]);
 
     useEffect(() => {
         const syncJustFinished = wasSyncingRef.current && !isSyncing;
@@ -369,7 +387,7 @@ export const Header = () => {
                                 </button>
                             </div>
                         ) : (
-                            <div className="relative">
+                            <div className="relative" ref={userMenuRef}>
                                 <button
                                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                                     className="p-2 hover:bg-gray-100 rounded-full transition flex items-center gap-1.5"
