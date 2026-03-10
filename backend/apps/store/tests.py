@@ -78,3 +78,19 @@ class DailyUniqueVisitApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+    def test_public_track_visit_creates_single_daily_record_per_visitor(self):
+        first_response = self.client.post(
+            "/api/analytics/track-visit",
+            data='{"visitor_id":"visitor-123","path":"/"}',
+            content_type="application/json",
+        )
+        second_response = self.client.post(
+            "/api/analytics/track-visit",
+            data='{"visitor_id":"visitor-123","path":"/produto/teste"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(DailyUniqueVisit.objects.filter(visitor_hash="visitor-123").count(), 1)

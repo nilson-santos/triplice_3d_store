@@ -200,6 +200,10 @@ def list_products(request, category_id: int = None, search: str = None, ordering
 class GeneratePriceTagsSchema(Schema):
     product_ids: List[int]
 
+class TrackVisitSchema(Schema):
+    visitor_id: str
+    path: str | None = None
+
 @api.post("/tags/generate-pdf", auth=JWTAuth())
 def generate_price_tags(request, data: GeneratePriceTagsSchema):
     user = request.user
@@ -217,6 +221,21 @@ def generate_price_tags(request, data: GeneratePriceTagsSchema):
     
     response = FileResponse(pdf_buffer, as_attachment=True, filename='etiquetas.pdf')
     return response
+
+
+@api.post("/analytics/track-visit")
+def track_visit(request, data: TrackVisitSchema):
+    visitor_id = (data.visitor_id or "").strip()
+    if not visitor_id:
+        return 400, {"error": "visitor_id é obrigatório."}
+
+    today = timezone.localdate()
+    DailyUniqueVisit.objects.get_or_create(
+        date=today,
+        visitor_hash=visitor_id[:64],
+        defaults={"first_path": (data.path or request.path or "")[:255]},
+    )
+    return {"message": "ok"}
 
 
 @api.get("/admin/daily-unique-visits", response={200: DailyUniqueVisitsSchema, 403: ErrorResponseSchema}, auth=JWTAuth())

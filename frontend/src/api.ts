@@ -217,6 +217,13 @@ export const getBanners = async (): Promise<Banner[]> => {
     return res.data;
 };
 
+export const trackVisit = async (visitorId: string, path: string): Promise<void> => {
+    await api.post('/analytics/track-visit', {
+        visitor_id: visitorId,
+        path,
+    });
+};
+
 export interface DailyUniqueVisitsResponse {
     date: string;
     count: number;

@@ -10,6 +10,7 @@ import { Favorites } from './pages/Favorites';
 import { ScrollToTop } from './components/ScrollToTop';
 import { PromotionalPopup } from './components/PromotionalPopup';
 import { WhatsAppFAB } from './components/WhatsAppFAB';
+import { VisitTracker } from './components/VisitTracker';
 import PriceTags from './pages/PriceTags';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
+          <VisitTracker />
           <ScrollToTop />
           <PromotionalPopup />
           <div className="min-h-screen bg-white text-black">
