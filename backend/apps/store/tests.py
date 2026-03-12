@@ -158,6 +158,6 @@ class OrderEmailNotificationTests(TestCase):
 
         self.assertEqual(len(mail.outbox), 2)
         self.assertTrue(all("Status atual do pedido: Enviado" in email.body for email in mail.outbox))
-        self.assertTrue(all("Status anterior do pedido: Pendente" in email.body for email in mail.outbox))
+        self.assertTrue(all("Status anterior do pedido:" not in email.body for email in mail.outbox))
         self.assertTrue(all(email.alternatives for email in mail.outbox))
         self.assertTrue(all("Status atualizado para Enviado" in email.alternatives[0][0] or "Pedido em Enviado" in email.alternatives[0][0] for email in mail.outbox))

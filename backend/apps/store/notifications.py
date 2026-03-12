@@ -98,7 +98,7 @@ def _order_address_text(order) -> str:
 
 def _base_order_message(order, previous_status: str | None = None) -> str:
     lines = [
-        f"Pedido: #{order.order_number}",
+        f"Pedido: Nᵒ {order.order_number}",
         f"Cliente: {order.customer_name}",
         f"E-mail do cliente: {order.customer_email or 'Nao informado'}",
         f"Telefone: {order.customer_phone or 'Nao informado'}",
@@ -112,9 +112,6 @@ def _base_order_message(order, previous_status: str | None = None) -> str:
         "Itens:",
         _order_items_text(order),
     ]
-
-    if previous_status and previous_status != order.status:
-        lines.insert(4, f"Status anterior do pedido: {_status_label(previous_status)}")
 
     return "\n".join(lines)
 
@@ -156,7 +153,7 @@ def _pickup_maps_button(order) -> str:
     return f"""
     <tr>
       <td align="center" style="padding:0 0 14px 0;">
-        <a href="{STORE_PICKUP_MAPS_URL}" style="display:inline-block;background:#ffffff;color:#111827;text-decoration:none;font-size:14px;font-weight:800;padding:14px 22px;border-radius:999px;border:1px solid #d1d5db;">Ver endereco da retirada no mapa</a>
+        <a href="{STORE_PICKUP_MAPS_URL}" style="display:inline-block;background:#ffffff;color:#1d4ed8;text-decoration:none;font-size:14px;font-weight:800;padding:14px 22px;border-radius:999px;border:1px solid #bfdbfe;">Ver endereco da retirada no mapa</a>
       </td>
     </tr>
     """
@@ -170,18 +167,6 @@ def _email_html(
     previous_status: str | None = None,
     cta_label: str,
 ) -> str:
-    previous_status_html = ""
-    if previous_status and previous_status != order.status:
-        previous_status_html = f"""
-        <tr>
-          <td style="padding:0 0 14px 0;">
-            <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:16px;padding:14px 16px;font-size:14px;line-height:1.5;color:#9a3412;">
-              Status anterior: <strong>{_status_label(previous_status)}</strong>
-            </div>
-          </td>
-        </tr>
-        """
-
     items_html = "".join(
         f"""
         <tr>
@@ -211,16 +196,16 @@ def _email_html(
     <title>{headline}</title>
   </head>
   <body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#111827;">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:linear-gradient(180deg,#eef2ff 0%,#f3f4f6 42%,#f8fafc 100%);margin:0;padding:24px 12px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 45%,#f8fbff 100%);margin:0;padding:24px 12px;">
       <tr>
         <td align="center">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:640px;margin:0 auto;">
             <tr>
               <td style="padding:0;">
-                <div style="background:linear-gradient(135deg,#111827 0%,#1f2937 40%,#ea580c 100%);border-radius:28px 28px 0 0;padding:34px 28px 26px 28px;text-align:center;box-shadow:0 24px 60px rgba(17,24,39,0.18);">
+                <div style="background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 45%,#93c5fd 100%);border-radius:28px 28px 0 0;padding:34px 28px 26px 28px;text-align:center;box-shadow:0 24px 60px rgba(59,130,246,0.18);">
                   {logo_html}
-                  <div style="font-size:28px;line-height:1.2;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">{headline}</div>
-                  <div style="font-size:15px;line-height:1.7;color:rgba(255,255,255,0.82);max-width:460px;margin:12px auto 0 auto;">{intro}</div>
+                  <div style="font-size:28px;line-height:1.2;font-weight:800;color:#0f172a;letter-spacing:-0.03em;">{headline}</div>
+                  <div style="font-size:15px;line-height:1.7;color:#334155;max-width:460px;margin:12px auto 0 auto;">{intro}</div>
                 </div>
               </td>
             </tr>
@@ -229,26 +214,25 @@ def _email_html(
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                   <tr>
                     <td style="padding:0 0 18px 0;">
-                      <div style="background:linear-gradient(135deg,#fff7ed 0%,#ffffff 100%);border:1px solid #fed7aa;border-radius:20px;padding:18px 20px;">
-                        <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#c2410c;text-transform:uppercase;">Pedido</div>
-                        <div style="font-size:32px;line-height:1.1;font-weight:800;color:#111827;margin-top:6px;">#{order.order_number}</div>
+                      <div style="background:linear-gradient(135deg,#eff6ff 0%,#ffffff 100%);border:1px solid #bfdbfe;border-radius:20px;padding:18px 20px;">
+                        <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#2563eb;text-transform:uppercase;">Pedido</div>
+                        <div style="font-size:32px;line-height:1.1;font-weight:800;color:#111827;margin-top:6px;">Nᵒ {order.order_number}</div>
                       </div>
                     </td>
                   </tr>
-                  {previous_status_html}
                   <tr>
                     <td style="padding:0 0 18px 0;">
                       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                         <tr>
                           <td width="50%" style="padding:0 8px 12px 0;vertical-align:top;">
-                            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:18px;padding:16px;">
-                              <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6b7280;">Status do pedido</div>
+                            <div style="background:#f8fbff;border:1px solid #dbeafe;border-radius:18px;padding:16px;">
+                              <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">Status do pedido</div>
                               <div style="font-size:20px;font-weight:800;color:#111827;margin-top:8px;">{_status_label(order.status)}</div>
                             </div>
                           </td>
                           <td width="50%" style="padding:0 0 12px 8px;vertical-align:top;">
-                            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:18px;padding:16px;">
-                              <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6b7280;">Pagamento</div>
+                            <div style="background:#f8fbff;border:1px solid #dbeafe;border-radius:18px;padding:16px;">
+                              <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">Pagamento</div>
                               <div style="font-size:20px;font-weight:800;color:#111827;margin-top:8px;">{_payment_label_pretty(order.payment_status)}</div>
                             </div>
                           </td>
@@ -258,7 +242,7 @@ def _email_html(
                   </tr>
                   <tr>
                     <td style="padding:0 0 20px 0;">
-                      <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:20px;padding:20px;">
+                      <div style="background:#ffffff;border:1px solid #dbeafe;border-radius:20px;padding:20px;">
                         <div style="font-size:16px;font-weight:800;color:#111827;margin-bottom:14px;">Resumo do pedido</div>
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                           <tr><td style="padding:0 0 10px 0;font-size:14px;color:#6b7280;">Cliente</td><td align="right" style="padding:0 0 10px 12px;font-size:14px;font-weight:700;color:#111827;">{order.customer_name}</td></tr>
@@ -266,14 +250,14 @@ def _email_html(
                           <tr><td style="padding:0 0 10px 0;font-size:14px;color:#6b7280;">Telefone</td><td align="right" style="padding:0 0 10px 12px;font-size:14px;font-weight:700;color:#111827;">{order.customer_phone or 'Nao informado'}</td></tr>
                           <tr><td style="padding:0 0 10px 0;font-size:14px;color:#6b7280;">Forma de pagamento</td><td align="right" style="padding:0 0 10px 12px;font-size:14px;font-weight:700;color:#111827;">{order.payment_method or 'Nao informado'}</td></tr>
                           <tr><td style="padding:0 0 10px 0;font-size:14px;color:#6b7280;">Entrega</td><td align="right" style="padding:0 0 10px 12px;font-size:14px;font-weight:700;color:#111827;">{_shipping_label(order.shipping_type)}</td></tr>
-                          <tr><td style="padding:0;font-size:14px;color:#6b7280;">Total</td><td align="right" style="padding:0 0 0 12px;font-size:20px;font-weight:800;color:#ea580c;">{_order_total(order)}</td></tr>
+                          <tr><td style="padding:0;font-size:14px;color:#6b7280;">Total</td><td align="right" style="padding:0 0 0 12px;font-size:20px;font-weight:800;color:#86efac;">{_order_total(order)}</td></tr>
                         </table>
                       </div>
                     </td>
                   </tr>
                   <tr>
                     <td style="padding:0 0 20px 0;">
-                      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:20px;padding:20px;">
+                      <div style="background:#f8fbff;border:1px solid #dbeafe;border-radius:20px;padding:20px;">
                         <div style="font-size:16px;font-weight:800;color:#111827;margin-bottom:14px;">Endereco e entrega</div>
                         <div style="font-size:14px;line-height:1.7;color:#4b5563;">{_order_address_text(order)}</div>
                       </div>
@@ -290,7 +274,7 @@ def _email_html(
                   </tr>
                   <tr>
                     <td align="center" style="padding:8px 0 0 0;">
-                      <a href="{_action_url(order)}" style="display:inline-block;background:linear-gradient(135deg,#111827 0%,#ea580c 100%);color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;padding:15px 26px;border-radius:999px;">{cta_label}</a>
+                      <a href="{_action_url(order)}" style="display:inline-block;background:linear-gradient(135deg,#60a5fa 0%,#93c5fd 100%);color:#0f172a;text-decoration:none;font-size:15px;font-weight:800;padding:15px 26px;border-radius:999px;">{cta_label}</a>
                     </td>
                   </tr>
                   <tr>
