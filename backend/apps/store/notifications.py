@@ -10,6 +10,8 @@ from django.db import transaction
 logger = logging.getLogger(__name__)
 
 LOGO_CID = "triplice3d-logo"
+STORE_PICKUP_ADDRESS = "R. Nelly da Cruz Teixeira, 594 - Ipe IV, Foz do Iguacu - PR, 85869-692"
+STORE_PICKUP_MAPS_URL = "https://maps.app.goo.gl/KwQwpxR1wYfV26fF9"
 
 
 STATUS_LABELS = {
@@ -80,7 +82,7 @@ def _order_items_text(order) -> str:
 
 def _order_address_text(order) -> str:
     if order.shipping_type != "FREE_DELIVERY_FOZ":
-        return "Retirada na loja"
+        return STORE_PICKUP_ADDRESS
 
     parts = [
         order.shipping_address_street,
@@ -145,6 +147,19 @@ def _attach_logo(email_message: EmailMultiAlternatives) -> None:
 
 def _action_url(order) -> str:
     return f"{getattr(settings, 'STORE_BASE_URL', 'https://triplice3d.com.br').rstrip('/')}/rastrear-pedido"
+
+
+def _pickup_maps_button(order) -> str:
+    if order.shipping_type == "FREE_DELIVERY_FOZ":
+        return ""
+
+    return f"""
+    <tr>
+      <td align="center" style="padding:0 0 14px 0;">
+        <a href="{STORE_PICKUP_MAPS_URL}" style="display:inline-block;background:#ffffff;color:#111827;text-decoration:none;font-size:14px;font-weight:800;padding:14px 22px;border-radius:999px;border:1px solid #d1d5db;">Ver endereco da retirada no mapa</a>
+      </td>
+    </tr>
+    """
 
 
 def _email_html(
@@ -264,6 +279,7 @@ def _email_html(
                       </div>
                     </td>
                   </tr>
+                  {_pickup_maps_button(order)}
                   <tr>
                     <td style="padding:0 0 20px 0;">
                       <div style="font-size:16px;font-weight:800;color:#111827;margin-bottom:14px;">Itens do pedido</div>
