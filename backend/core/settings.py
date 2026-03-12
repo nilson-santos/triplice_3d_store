@@ -174,6 +174,8 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@triplice3d.com.br')
+BACKOFFICE_ORDER_EMAIL = os.environ.get('BACKOFFICE_ORDER_EMAIL', 'financeiro@nilson.com.br')
+STORE_BASE_URL = os.environ.get('STORE_BASE_URL', 'https://triplice3d.com.br')
 
 # Django Ninja JWT Configuration
 # Sets user token to never expire or a very long time
